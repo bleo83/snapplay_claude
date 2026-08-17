@@ -19,6 +19,7 @@ const envSchema = z.object({
     .transform((value) => value === "true"),
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_PUBLISHABLE_KEY: z.string().optional(),
+  SUPABASE_SECRET_KEY: z.string().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   RAPPI_WEBHOOK_SECRET: z.string().min(32).optional(),
   LOG_LEVEL: z
@@ -29,14 +30,12 @@ const envSchema = z.object({
 export const env = envSchema.parse(process.env);
 
 if (!env.SNAPPLAY_DEMO_MODE) {
-  const required = [
-    env.SUPABASE_URL,
-    env.SUPABASE_SERVICE_ROLE_KEY,
-    env.RAPPI_WEBHOOK_SECRET,
-  ];
-  if (required.some((value) => !value)) {
+  const hasServerKey = Boolean(
+    env.SUPABASE_SECRET_KEY ?? env.SUPABASE_SERVICE_ROLE_KEY,
+  );
+  if (!env.SUPABASE_URL || !hasServerKey || !env.RAPPI_WEBHOOK_SECRET) {
     throw new Error(
-      "SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and RAPPI_WEBHOOK_SECRET are required outside demo mode",
+      "SUPABASE_URL, SUPABASE_SECRET_KEY (or legacy SUPABASE_SERVICE_ROLE_KEY), and RAPPI_WEBHOOK_SECRET are required outside demo mode",
     );
   }
 }

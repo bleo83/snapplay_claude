@@ -55,7 +55,7 @@ El archivo `.env.local` incluido localmente está ignorado por Git y mantiene `S
 
 ## Conectar un proyecto Supabase de desarrollo
 
-1. Copiar `.env.example` a `.env.local` para la API y `apps/backoffice/.env.example` a `apps/backoffice/.env.local` para la UI. Cargar URL y service role key sólo en el archivo raíz; URL y publishable key públicas en el archivo del backoffice. La service role key nunca debe usar el prefijo `NEXT_PUBLIC_`.
+1. Copiar `.env.example` a `.env.local` para la API y `apps/backoffice/.env.example` a `apps/backoffice/.env.local` para la UI. Cargar URL y `SUPABASE_SECRET_KEY` sólo en el archivo raíz; URL y publishable key públicas en el archivo del backoffice. La secret key nunca debe usar el prefijo `NEXT_PUBLIC_`. Los proyectos legacy también pueden usar `SUPABASE_SERVICE_ROLE_KEY`.
 2. Cambiar `SNAPPLAY_DEMO_MODE=false` y `NEXT_PUBLIC_SNAPPLAY_DEMO_MODE=false`.
 3. Vincular y aplicar la base:
 
