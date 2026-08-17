@@ -1,0 +1,306 @@
+asyncapi: 3.0.0
+info:
+  title: Snap Play Events API
+  version: 0.1.0
+  description: |
+    Contrato de eventos externos del piloto Disney × Rappi. Los partners se integran mediante
+    webhooks HTTPS firmados. Snap Play puede usar Kafka o un servicio administrado internamente,
+    pero ese transporte no forma parte del contrato entre empresas.
+defaultContentType: application/cloudevents+json
+servers:
+  snapplayIngress:
+    host: api.snapplay.io
+    pathname: /v1/partner/events
+    protocol: https
+    description: Ingreso de eventos desde commerce/delivery hacia Snap Play.
+    security:
+      - $ref: "#/components/securitySchemes/mutualTls"
+      - $ref: "#/components/securitySchemes/oauth2"
+  partnerWebhook:
+    host: partner-configured.example
+    pathname: /snapplay/events
+    protocol: https
+    description: Destino allowlisted configurado por Disney u otro aliado.
+channels:
+  partnerEvents:
+    address: /v1/partner/events
+    messages:
+      orderPlaced:
+        $ref: "#/components/messages/OrderPlaced"
+      orderStatusChanged:
+        $ref: "#/components/messages/OrderStatusChanged"
+      orderRefunded:
+        $ref: "#/components/messages/OrderRefunded"
+      catalogChanged:
+        $ref: "#/components/messages/CatalogChanged"
+  snapplayEvents:
+    address: /snapplay/events
+    messages:
+      handoffConverted:
+        $ref: "#/components/messages/HandoffConverted"
+      orderMilestone:
+        $ref: "#/components/messages/OrderMilestone"
+      settlementCalculated:
+        $ref: "#/components/messages/SettlementCalculated"
+operations:
+  receivePartnerEvents:
+    action: receive
+    channel:
+      $ref: "#/channels/partnerEvents"
+    summary: Snap Play recibe eventos firmados del provider.
+  sendPartnerEvents:
+    action: send
+    channel:
+      $ref: "#/channels/snapplayEvents"
+    summary: Snap Play entrega eventos filtrados por la data policy del receptor.
+components:
+  securitySchemes:
+    mutualTls:
+      type: X509
+      description: Certificado cliente por partner y environment.
+    oauth2:
+      type: oauth2
+      description: Client Credentials con tokens de corta duración.
+      flows:
+        clientCredentials:
+          tokenUrl: https://identity.snapplay.io/oauth2/token
+          availableScopes:
+            orders:write: Enviar eventos de órdenes.
+            catalog:write: Enviar cambios de catálogo.
+  messages:
+    OrderPlaced:
+      name: com.rappi.order.placed.v1
+      title: Orden creada en Rappi y atribuida a Snap Play.
+      payload:
+        $ref: "#/components/schemas/OrderEventEnvelope"
+      examples:
+        - name: orderPlaced
+          payload:
+            specversion: "1.0"
+            id: evt_rappi_8f5838
+            source: /rappi/ar/orders
+            type: com.rappi.order.placed.v1
+            subject: orders/order_884031
+            time: "2026-09-05T22:14:12Z"
+            datacontenttype: application/json
+            data:
+              connection_id: 24a9d6a6-f405-430e-8ba1-2cad9f3a006e
+              provider_order_ref: order_884031
+              tracking_token: sp_ht_01J...
+              status: PLACED
+              currency: ARS
+              order_total_minor: 2899000
+              eligible_item_value_minor: 1499000
+              occurred_at: "2026-09-05T22:14:12Z"
+    OrderStatusChanged:
+      name: com.rappi.order.status-changed.v1
+      title: Cambio de estado de fulfillment.
+      payload:
+        $ref: "#/components/schemas/OrderEventEnvelope"
+    OrderRefunded:
+      name: com.rappi.order.refunded.v1
+      title: Refund total o parcial.
+      payload:
+        $ref: "#/components/schemas/RefundEventEnvelope"
+    CatalogChanged:
+      name: com.rappi.catalog.changed.v1
+      title: Notificación de que hay cambios de catálogo para sincronizar.
+      payload:
+        $ref: "#/components/schemas/CatalogEventEnvelope"
+    HandoffConverted:
+      name: io.snapplay.handoff.converted.v1
+      title: Una sesión originada en contenido produjo una orden.
+      payload:
+        $ref: "#/components/schemas/SnapPlayEventEnvelope"
+    OrderMilestone:
+      name: io.snapplay.order.milestone.v1
+      title: Milestone sanitizado para mostrar en la plataforma de contenido.
+      payload:
+        $ref: "#/components/schemas/OrderMilestoneEnvelope"
+      examples:
+        - name: nearDestination
+          payload:
+            specversion: "1.0"
+            id: evt_sp_01J...
+            source: /snapplay/connections/24a9d6a6-f405-430e-8ba1-2cad9f3a006e
+            type: io.snapplay.order.milestone.v1
+            subject: handoffs/6b7caedf-7a1d-4b64-8907-1954b8a75509
+            time: "2026-09-05T22:39:08Z"
+            datacontenttype: application/json
+            data:
+              handoff_id: 6b7caedf-7a1d-4b64-8907-1954b8a75509
+              status: NEAR_DESTINATION
+              display_message: Tu pedido está llegando
+              occurred_at: "2026-09-05T22:39:08Z"
+    SettlementCalculated:
+      name: io.snapplay.settlement.calculated.v1
+      title: Un settlement quedó listo para revisión.
+      payload:
+        $ref: "#/components/schemas/SnapPlayEventEnvelope"
+  schemas:
+    CloudEventBase:
+      type: object
+      required: [specversion, id, source, type, subject, time, datacontenttype]
+      properties:
+        specversion:
+          type: string
+          const: "1.0"
+        id:
+          type: string
+        source:
+          type: string
+        type:
+          type: string
+        subject:
+          type: string
+        time:
+          type: string
+          format: date-time
+        datacontenttype:
+          type: string
+          const: application/json
+    OrderEventEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/CloudEventBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              type: object
+              required:
+                - connection_id
+                - provider_order_ref
+                - tracking_token
+                - status
+                - occurred_at
+              properties:
+                connection_id:
+                  type: string
+                  format: uuid
+                provider_order_ref:
+                  type: string
+                tracking_token:
+                  type: string
+                status:
+                  type: string
+                  enum:
+                    - PLACED
+                    - CONFIRMED
+                    - PREPARING
+                    - COURIER_ASSIGNED
+                    - PICKED_UP
+                    - NEAR_DESTINATION
+                    - ARRIVED_AT_DESTINATION
+                    - DELIVERED
+                    - REJECTED
+                    - CANCELLED
+                    - FAILED
+                currency:
+                  type: [string, "null"]
+                order_total_minor:
+                  type: [integer, "null"]
+                eligible_item_value_minor:
+                  type: [integer, "null"]
+                occurred_at:
+                  type: string
+                  format: date-time
+    RefundEventEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/CloudEventBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              type: object
+              required:
+                [
+                  connection_id,
+                  provider_order_ref,
+                  refund_ref,
+                  amount_minor,
+                  currency,
+                  occurred_at,
+                ]
+              properties:
+                connection_id:
+                  type: string
+                  format: uuid
+                provider_order_ref:
+                  type: string
+                refund_ref:
+                  type: string
+                amount_minor:
+                  type: integer
+                  minimum: 0
+                eligible_amount_minor:
+                  type: [integer, "null"]
+                currency:
+                  type: string
+                reason_code:
+                  type: [string, "null"]
+                occurred_at:
+                  type: string
+                  format: date-time
+    CatalogEventEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/CloudEventBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              type: object
+              required: [connection_id, cursor, occurred_at]
+              properties:
+                connection_id:
+                  type: string
+                  format: uuid
+                cursor:
+                  type: string
+                changed_resources:
+                  type: array
+                  items:
+                    type: string
+                    enum: [STORES, PRODUCTS, PRICES, INVENTORY]
+                occurred_at:
+                  type: string
+                  format: date-time
+    SnapPlayEventEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/CloudEventBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              type: object
+              additionalProperties: true
+    OrderMilestoneEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/CloudEventBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              type: object
+              required: [handoff_id, status, occurred_at]
+              properties:
+                handoff_id:
+                  type: string
+                  format: uuid
+                publisher_user_ref:
+                  type: [string, "null"]
+                status:
+                  type: string
+                  enum:
+                    [
+                      CONFIRMED,
+                      PICKED_UP,
+                      NEAR_DESTINATION,
+                      ARRIVED_AT_DESTINATION,
+                      DELIVERED,
+                      CANCELLED,
+                    ]
+                display_message:
+                  type: [string, "null"]
+                occurred_at:
+                  type: string
+                  format: date-time

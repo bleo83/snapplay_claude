@@ -1,0 +1,618 @@
+openapi: 3.1.0
+info:
+  title: Rappi Commerce Adapter API for Snap Play
+  version: 0.1.0-proposal
+  summary: Contrato propuesto; debe ser validado y adaptado con el equipo de Rappi.
+  description: |
+    API server-to-server que permite a Snap Play consultar catálogo y crear un destino de compra
+    atribuible sin asumir autenticación del comprador, pagos, stock final ni fulfillment.
+
+    Los endpoints se presentan en niveles. `STORE_DEEPLINK` puede funcionar sin esta API;
+    `DYNAMIC_STOREFRONT` es el nivel recomendado; `CART_HANDOFF` es opcional.
+servers:
+  - url: https://partners.sandbox.rappi.example
+    description: Sandbox propuesto
+  - url: https://partners.rappi.example
+    description: Producción propuesta
+tags:
+  - name: Capabilities
+  - name: Catalog
+  - name: Handoff
+  - name: Reconciliation
+paths:
+  /partner/v1/capabilities:
+    get:
+      tags: [Capabilities]
+      operationId: getRappiAdapterCapabilities
+      summary: Devuelve capacidades negociadas para el cliente Snap Play.
+      security:
+        - mutualTLS: []
+          oauth2: ["capabilities:read"]
+      responses:
+        "200":
+          description: Capabilities.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Capabilities"
+              examples:
+                pilot:
+                  value:
+                    version: "2026-09-01"
+                    catalog:
+                      supports_stores: true
+                      supports_products: true
+                      supports_inventory: true
+                      supports_incremental_cursor: true
+                    handoff:
+                      modes: [STORE_DEEPLINK, DYNAMIC_STOREFRONT]
+                      supports_product_filter: true
+                      supports_collection_filter: true
+                      supports_tracking_token: true
+                    orders:
+                      supports_webhooks: true
+                      supports_reconciliation_pull: true
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /partner/v1/catalog/stores:
+    get:
+      tags: [Catalog]
+      operationId: listRappiStores
+      summary: Lista stores visibles para la conexión y territorio.
+      security:
+        - mutualTLS: []
+          oauth2: ["catalog:read"]
+      parameters:
+        - name: country
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[A-Z]{2}$"
+        - name: updated_since
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de stores.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorePage"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /partner/v1/catalog/products:
+    get:
+      tags: [Catalog]
+      operationId: listRappiProducts
+      summary: Lista SKUs, imágenes, categorías y referencia de disponibilidad.
+      description: Precio y stock deben volver a confirmarse cuando Rappi conoce la ubicación del comprador.
+      security:
+        - mutualTLS: []
+          oauth2: ["catalog:read"]
+      parameters:
+        - name: store_id
+          in: query
+          schema:
+            type: string
+        - name: collection_id
+          in: query
+          schema:
+            type: string
+        - name: updated_since
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, INACTIVE]
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de productos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductPage"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /partner/v1/storefront-sessions:
+    post:
+      tags: [Handoff]
+      operationId: createRappiStorefrontSession
+      summary: Crea una tienda/colección efímera y devuelve deep link y web URL.
+      description: |
+        Opción recomendada. Rappi valida que el `store_id`, products y collection pertenezcan a
+        la relación autorizada. Si aún no conoce ubicación, resuelve store/cobertura al abrir la app.
+      security:
+        - mutualTLS: []
+          oauth2: ["handoff:write"]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStorefrontSessionRequest"
+            examples:
+              toyStory:
+                value:
+                  store_selection:
+                    strategy: PROVIDER_RESOLVES_LOCATION
+                    fallback_store_id: disney_turbo_ar
+                  allowed_product_ids:
+                    - sku_toy_story_cup
+                    - sku_popcorn_01
+                  fallback_collection_id: movie_night
+                  tracking_token: sp_ht_01J8R44AWVX8P4D8KZ6ZB8H8FS
+                  country: AR
+                  locale: es-AR
+                  expires_in_seconds: 900
+                  metadata:
+                    experience_version_ref: expv_01J...
+      responses:
+        "201":
+          description: Sesión creada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorefrontSession"
+              examples:
+                created:
+                  value:
+                    session_id: rfs_01J8R4BBK8V4ZBYJE6H9A3V0AY
+                    deep_link: "rappi://storefront/rfs_01J8R4BBK8V4ZBYJE6H9A3V0AY"
+                    web_url: "https://www.rappi.com.ar/storefront/rfs_01J8R4BBK8V4ZBYJE6H9A3V0AY"
+                    expires_at: "2026-09-05T22:25:00Z"
+                    accepted_product_ids: [sku_toy_story_cup, sku_popcorn_01]
+                    rejected_products: []
+        "422":
+          description: Store, products, territorio o reglas incompatibles.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /partner/v1/cart-sessions:
+    post:
+      tags: [Handoff]
+      operationId: createRappiCartSession
+      summary: Crea un carrito prearmado; capability opcional posterior al piloto.
+      security:
+        - mutualTLS: []
+          oauth2: ["handoff:write"]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [tracking_token, country, items, expires_in_seconds]
+              properties:
+                store_id:
+                  type: [string, "null"]
+                tracking_token:
+                  type: string
+                country:
+                  type: string
+                  pattern: "^[A-Z]{2}$"
+                items:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [product_id, quantity]
+                    properties:
+                      product_id:
+                        type: string
+                      quantity:
+                        type: integer
+                        minimum: 1
+                substitution_policy:
+                  type: string
+                  enum: [NO_SUBSTITUTION, USER_DECIDES_IN_RAPPI]
+                  default: USER_DECIDES_IN_RAPPI
+                expires_in_seconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 3600
+      responses:
+        "201":
+          description: Carrito creado y pendiente de validación final por ubicación.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [cart_session_id, deep_link, web_url, expires_at]
+                properties:
+                  cart_session_id:
+                    type: string
+                  deep_link:
+                    type: string
+                    format: uri
+                  web_url:
+                    type: string
+                    format: uri
+                  expires_at:
+                    type: string
+                    format: date-time
+                  warnings:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /partner/v1/orders:
+    get:
+      tags: [Reconciliation]
+      operationId: listAttributedRappiOrders
+      summary: Lista mínima de órdenes atribuidas para recuperación y conciliación.
+      description: Los campos devueltos dependen de la data policy y las reglas económicas vigentes.
+      security:
+        - mutualTLS: []
+          oauth2: ["orders:read"]
+      parameters:
+        - name: occurred_from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: occurred_to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: updated_since
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de órdenes atribuibles.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AttributedOrder"
+                  next_cursor:
+                    type: [string, "null"]
+        default:
+          $ref: "#/components/responses/Problem"
+
+components:
+  securitySchemes:
+    mutualTLS:
+      type: mutualTLS
+    oauth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://partners.rappi.example/oauth2/token
+          scopes:
+            capabilities:read: Leer capabilities.
+            catalog:read: Leer catálogo autorizado.
+            handoff:write: Crear storefront/cart sessions.
+            orders:read: Recuperar órdenes atribuibles.
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
+        default: 100
+  responses:
+    Problem:
+      description: Error RFC 9457.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    Capabilities:
+      type: object
+      required: [version, catalog, handoff, orders]
+      properties:
+        version:
+          type: string
+        catalog:
+          type: object
+          additionalProperties: true
+        handoff:
+          type: object
+          required: [modes, supports_tracking_token]
+          properties:
+            modes:
+              type: array
+              items:
+                type: string
+                enum: [STORE_DEEPLINK, DYNAMIC_STOREFRONT, CART_HANDOFF]
+            supports_product_filter:
+              type: boolean
+            supports_collection_filter:
+              type: boolean
+            supports_tracking_token:
+              type: boolean
+        orders:
+          type: object
+          additionalProperties: true
+    Store:
+      type: object
+      required: [store_id, name, country, status, updated_at]
+      properties:
+        store_id:
+          type: string
+        name:
+          type: string
+        country:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+        service_area_ref:
+          type: [string, "null"]
+        attributes:
+          type: object
+          additionalProperties: true
+        updated_at:
+          type: string
+          format: date-time
+    StorePage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Store"
+        next_cursor:
+          type: [string, "null"]
+    Product:
+      type: object
+      required:
+        [
+          product_id,
+          name,
+          image_url,
+          categories,
+          age_restricted,
+          status,
+          updated_at,
+        ]
+      properties:
+        product_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: [string, "null"]
+        image_url:
+          type: string
+          format: uri
+        brand:
+          type: [string, "null"]
+        categories:
+          type: array
+          items:
+            type: string
+        gtin:
+          type: [string, "null"]
+        age_restricted:
+          type: boolean
+        reference_price_minor:
+          type: [integer, "null"]
+        currency:
+          type: [string, "null"]
+        store_ids:
+          type: array
+          items:
+            type: string
+        collection_ids:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+        updated_at:
+          type: string
+          format: date-time
+    ProductPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        next_cursor:
+          type: [string, "null"]
+    CreateStorefrontSessionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          store_selection,
+          allowed_product_ids,
+          tracking_token,
+          country,
+          expires_in_seconds,
+        ]
+      properties:
+        store_selection:
+          type: object
+          required: [strategy]
+          properties:
+            strategy:
+              type: string
+              enum: [FIXED_STORE, PROVIDER_RESOLVES_LOCATION]
+            store_id:
+              type: [string, "null"]
+            fallback_store_id:
+              type: [string, "null"]
+        allowed_product_ids:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+        fallback_collection_id:
+          type: [string, "null"]
+        tracking_token:
+          type: string
+          minLength: 16
+          maxLength: 200
+        country:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        locale:
+          type: string
+        expires_in_seconds:
+          type: integer
+          minimum: 60
+          maximum: 3600
+        metadata:
+          type: object
+          additionalProperties: true
+    StorefrontSession:
+      type: object
+      required:
+        [
+          session_id,
+          deep_link,
+          web_url,
+          expires_at,
+          accepted_product_ids,
+          rejected_products,
+        ]
+      properties:
+        session_id:
+          type: string
+        deep_link:
+          type: string
+          format: uri
+        web_url:
+          type: string
+          format: uri
+        expires_at:
+          type: string
+          format: date-time
+        accepted_product_ids:
+          type: array
+          items:
+            type: string
+        rejected_products:
+          type: array
+          items:
+            type: object
+            required: [product_id, reason]
+            properties:
+              product_id:
+                type: string
+              reason:
+                type: string
+                enum: [NOT_FOUND, INACTIVE, NOT_ALLOWED, OUT_OF_SCOPE]
+    AttributedOrder:
+      type: object
+      required:
+        - provider_order_ref
+        - tracking_token
+        - status
+        - currency
+        - order_total_minor
+        - placed_at
+        - updated_at
+      properties:
+        provider_order_ref:
+          type: string
+        tracking_token:
+          type: string
+        status:
+          type: string
+          enum:
+            [
+              PLACED,
+              CONFIRMED,
+              DELIVERED,
+              CANCELLED,
+              PARTIALLY_REFUNDED,
+              REFUNDED,
+            ]
+        currency:
+          type: string
+        order_total_minor:
+          type: integer
+        eligible_item_value_minor:
+          type: [integer, "null"]
+        items:
+          type: [array, "null"]
+          description: Sólo si la data policy o las reglas económicas lo requieren.
+          items:
+            type: object
+            additionalProperties: true
+        placed_at:
+          type: string
+          format: date-time
+        delivered_at:
+          type: [string, "null"]
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Problem:
+      type: object
+      required: [type, title, status, detail, request_id]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        request_id:
+          type: string

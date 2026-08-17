@@ -1,0 +1,2083 @@
+openapi: 3.1.0
+info:
+  title: Snap Play Platform API
+  version: 0.1.0
+  summary: API multi-tenant para orquestar contenido, comercio, delivery, atribución y settlement.
+  description: |
+    Contrato inicial del piloto Disney × Rappi. Los endpoints administrativos usan OAuth 2.0
+    con contexto de organización. Los endpoints de partners usan Client Credentials y pueden
+    exigir mTLS. Toda mutación idempotente acepta `Idempotency-Key`.
+servers:
+  - url: https://api.sandbox.snapplay.io
+    description: Sandbox
+  - url: https://api.snapplay.io
+    description: Producción
+tags:
+  - name: Organizations
+  - name: Privacy
+  - name: Connections
+  - name: Catalog
+  - name: Content
+  - name: Experiences
+  - name: Smart Links
+  - name: Handoffs
+  - name: Orders
+  - name: Analytics
+  - name: Contracts
+  - name: Settlements
+  - name: Webhooks
+  - name: Partner Ingress
+paths:
+  /v1/data-sharing-policies:
+    post:
+      tags: [Privacy]
+      operationId: createDataSharingPolicy
+      summary: Crea una política versionada de intercambio y retención de datos.
+      security:
+        - oauth2: ["privacy:write"]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDataSharingPolicyRequest"
+            examples:
+              billingOnly:
+                value:
+                  owner_organization_id: 50d2d7eb-c8fd-42df-bbb0-0ea0e2271090
+                  name: Billing only Disney Rappi
+                  mode: BILLING_ONLY
+                  allowed_fields:
+                    - provider_order_ref_hash
+                    - tracking_token
+                    - billable_status
+                    - currency
+                    - contractual_amounts
+                    - refund_status
+                  purposes: [BILLING, RECONCILIATION, AUDIT]
+                  retention_days: 1825
+                  consent_required: false
+      responses:
+        "201":
+          description: Política creada en borrador.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSharingPolicy"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/organizations:
+    post:
+      tags: [Organizations]
+      operationId: createOrganization
+      summary: Da de alta una empresa en Snap Play.
+      security:
+        - oauth2: ["organizations:write"]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrganizationRequest"
+            examples:
+              disney:
+                value:
+                  legal_name: The Walt Disney Company Argentina S.A.
+                  display_name: Disney
+                  organization_type: CONTENT_PROVIDER
+                  country: AR
+                  default_currency: ARS
+                  timezone: America/Argentina/Buenos_Aires
+      responses:
+        "201":
+          description: Organización creada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/connections:
+    post:
+      tags: [Connections]
+      operationId: createConnection
+      summary: Crea una conexión técnica entre organizaciones y un adapter.
+      security:
+        - oauth2: ["connections:write"]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateConnectionRequest"
+            examples:
+              disneyRappi:
+                value:
+                  name: Disney Argentina × Rappi Turbo
+                  content_organization_id: 50d2d7eb-c8fd-42df-bbb0-0ea0e2271090
+                  commerce_organization_id: 34e3015a-5644-401f-87ef-0155273a2c34
+                  connector_key: rappi
+                  environment: SANDBOX
+                  territories: [AR]
+                  capabilities:
+                    catalog:
+                      mode: PULL_CURSOR
+                      supports_inventory: true
+                    handoff:
+                      modes: [STORE_DEEPLINK, DYNAMIC_STOREFRONT]
+                      supports_product_filter: true
+                      supports_tracking_token: true
+                    orders:
+                      supports_webhooks: true
+                      supports_reconciliation_pull: true
+                  data_sharing_policy_id: 6995cd89-34ec-4cd6-84d0-a9b662292b9d
+      responses:
+        "201":
+          description: Conexión creada en estado pendiente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Connection"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/connections/{connectionId}:
+    get:
+      tags: [Connections]
+      operationId: getConnection
+      summary: Obtiene capacidades, estado y salud de una conexión.
+      security:
+        - oauth2: ["connections:read"]
+      parameters:
+        - $ref: "#/components/parameters/ConnectionId"
+      responses:
+        "200":
+          description: Conexión.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Connection"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/catalog/syncs:
+    post:
+      tags: [Catalog]
+      operationId: startCatalogSync
+      summary: Inicia una sincronización pull del catálogo de un partner.
+      security:
+        - oauth2: ["catalog:write"]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [connection_id, mode]
+              properties:
+                connection_id:
+                  type: string
+                  format: uuid
+                mode:
+                  type: string
+                  enum: [FULL, INCREMENTAL]
+                updated_since:
+                  type: string
+                  format: date-time
+      responses:
+        "202":
+          description: Sincronización aceptada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogSync"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/catalog/products:
+    get:
+      tags: [Catalog]
+      operationId: listCatalogProducts
+      summary: Lista productos normalizados disponibles para curación.
+      security:
+        - oauth2: ["catalog:read"]
+      parameters:
+        - name: connection_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: store_id
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: query
+          in: query
+          schema:
+            type: string
+            maxLength: 120
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, INACTIVE]
+            default: ACTIVE
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de productos.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CatalogProduct"
+                  next_cursor:
+                    type: [string, "null"]
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/content-contexts:
+    post:
+      tags: [Content]
+      operationId: createContentContext
+      summary: Crea una película, franquicia, channel, evento u otro contexto.
+      security:
+        - oauth2: ["experiences:write"]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContentContextRequest"
+            examples:
+              toyStory:
+                value:
+                  organization_id: 50d2d7eb-c8fd-42df-bbb0-0ea0e2271090
+                  channel_key: disney-plus
+                  external_ref: disney:movie:toy-story
+                  context_type: MOVIE
+                  title: Toy Story
+                  metadata:
+                    franchise: Toy Story
+                    rating: ATP
+      responses:
+        "201":
+          description: Contexto creado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentContext"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/experiences:
+    post:
+      tags: [Experiences]
+      operationId: createExperience
+      summary: Crea una experience editable en borrador.
+      security:
+        - oauth2: ["experiences:write"]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExperienceRequest"
+            examples:
+              toyStoryMovieNight:
+                value:
+                  organization_id: 50d2d7eb-c8fd-42df-bbb0-0ea0e2271090
+                  name: Toy Story Movie Night AR
+                  content_context_id: 184a63fe-4420-46de-9894-b16110364263
+                  connection_id: 24a9d6a6-f405-430e-8ba1-2cad9f3a006e
+                  contract_id: 0a2cf33c-9677-4468-9eef-7b7111494880
+                  handoff_mode: DYNAMIC_STOREFRONT
+                  store_selection:
+                    strategy: PROVIDER_RESOLVES_LOCATION
+                    fallback_store_id: disney_turbo_ar
+                  offer:
+                    title: Completá tu noche de película
+                    product_refs:
+                      - provider_product_id: sku_toy_story_cup
+                        required: false
+                        priority: 10
+                      - provider_product_id: sku_popcorn_01
+                        required: false
+                        priority: 20
+                    fallback_collection_id: movie_night
+                  eligibility:
+                    countries: [AR]
+                    starts_at: "2026-09-01T00:00:00Z"
+                    ends_at: "2026-12-01T00:00:00Z"
+                  presentation:
+                    locale: es-AR
+                    headline: Completá tu noche de película
+                    age_restricted: false
+      responses:
+        "201":
+          description: Experience borrador creada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Experience"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/experiences/{experienceId}/versions/{version}/publish:
+    post:
+      tags: [Experiences]
+      operationId: publishExperienceVersion
+      summary: Valida y publica una versión inmutable.
+      description: Puede requerir una aprobación distinta del usuario que editó la versión.
+      security:
+        - oauth2: ["experiences:publish"]
+      parameters:
+        - $ref: "#/components/parameters/ExperienceId"
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                change_note:
+                  type: string
+                  maxLength: 500
+      responses:
+        "200":
+          description: Versión publicada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Experience"
+        "422":
+          description: Capabilities, catálogo, contrato o policy incompatibles.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/smart-links:
+    post:
+      tags: [Smart Links]
+      operationId: createSmartLink
+      summary: Genera un link estable y su QR para una experience.
+      security:
+        - oauth2: ["links:write"]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organization_id, experience_id, placement_key]
+              properties:
+                organization_id:
+                  type: string
+                  format: uuid
+                experience_id:
+                  type: string
+                  format: uuid
+                placement_key:
+                  type: string
+                  pattern: "^[a-z0-9][a-z0-9._-]{1,79}$"
+                label:
+                  type: string
+                  maxLength: 120
+                expires_at:
+                  type: [string, "null"]
+                  format: date-time
+      responses:
+        "201":
+          description: Smart link creado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SmartLink"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /r/{shortCode}:
+    get:
+      tags: [Smart Links]
+      operationId: resolveSmartLink
+      summary: Resuelve un QR, crea atribución y redirige al destino.
+      description: Endpoint público. No acepta destinos arbitrarios por query string.
+      security: []
+      parameters:
+        - name: shortCode
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 12
+            maxLength: 32
+        - name: locale
+          in: query
+          schema:
+            type: string
+            pattern: "^[a-z]{2}-[A-Z]{2}$"
+      responses:
+        "302":
+          description: Redirección al deep link, web URL o landing de Snap Play.
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
+                format: uri
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "410":
+          description: Link retirado o expirado.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/handoffs/{handoffId}/status:
+    get:
+      tags: [Handoffs]
+      operationId: getHandoffStatus
+      summary: Obtiene el estado permitido de una sesión activa.
+      description: Usado por Disney backend o por un token efímero limitado a la sesión.
+      security:
+        - oauth2: ["orders:read"]
+        - handoffToken: []
+      parameters:
+        - name: handoffId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Estado sanitizado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HandoffStatus"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/orders:
+    get:
+      tags: [Orders]
+      operationId: listOrders
+      summary: Lista órdenes visibles según organización y data policy.
+      security:
+        - oauth2: ["orders:read"]
+      parameters:
+        - name: connection_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: experience_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/OrderStatus"
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de órdenes con campos redactados según policy.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProviderOrder"
+                  next_cursor:
+                    type: [string, "null"]
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/orders/{orderId}:
+    get:
+      tags: [Orders]
+      operationId: getOrder
+      summary: Obtiene una orden con redacción determinada por data policy.
+      security:
+        - oauth2: ["orders:read"]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Orden.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderOrder"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/analytics/sales:
+    get:
+      tags: [Analytics]
+      operationId: getSalesAnalytics
+      summary: Obtiene métricas de embudo y ventas según policy.
+      security:
+        - oauth2: ["analytics:read"]
+      parameters:
+        - name: connection_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: group_by
+          in: query
+          schema:
+            type: string
+            enum:
+              [
+                DAY,
+                CHANNEL,
+                CONTENT_CONTEXT,
+                EXPERIENCE,
+                PLACEMENT,
+                PSEUDONYMOUS_USER,
+              ]
+            default: DAY
+      responses:
+        "200":
+          description: Métricas agregadas o seudónimas autorizadas.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesAnalytics"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/contracts:
+    post:
+      tags: [Contracts]
+      operationId: createContract
+      summary: Crea la cabecera de un contrato comercial entre partes.
+      security:
+        - oauth2: ["contracts:write"]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContractRequest"
+      responses:
+        "201":
+          description: Contrato creado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommercialContract"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/contracts/{contractId}/versions:
+    post:
+      tags: [Contracts]
+      operationId: createContractVersion
+      summary: Crea una versión contractual en borrador.
+      security:
+        - oauth2: ["contracts:write"]
+      parameters:
+        - $ref: "#/components/parameters/ContractId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContractVersionRequest"
+      responses:
+        "201":
+          description: Versión creada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractVersion"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/contracts/{contractId}/versions/{version}/approve:
+    post:
+      tags: [Contracts]
+      operationId: approveContractVersion
+      summary: Aprueba e inmoviliza una versión contractual.
+      security:
+        - oauth2: ["contracts:approve"]
+      parameters:
+        - $ref: "#/components/parameters/ContractId"
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approval_reason]
+              properties:
+                approval_reason:
+                  type: string
+                  minLength: 3
+                  maxLength: 500
+      responses:
+        "200":
+          description: Versión aprobada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractVersion"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/settlements:
+    get:
+      tags: [Settlements]
+      operationId: listSettlements
+      summary: Lista statements visibles para una organización.
+      security:
+        - oauth2: ["settlements:read"]
+      parameters:
+        - name: contract_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              [
+                OPEN,
+                CALCULATED,
+                REVIEW,
+                APPROVED,
+                ISSUED,
+                PAID,
+                CLOSED,
+                DISPUTED,
+                VOIDED,
+              ]
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de settlements.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Settlement"
+                  next_cursor:
+                    type: [string, "null"]
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/settlements/{settlementId}/calculate:
+    post:
+      tags: [Settlements]
+      operationId: calculateSettlement
+      summary: Calcula o recalcula un período abierto de forma reproducible.
+      security:
+        - oauth2: ["settlements:calculate"]
+      parameters:
+        - $ref: "#/components/parameters/SettlementId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "202":
+          description: Cálculo aceptado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settlement"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/webhook-subscriptions:
+    post:
+      tags: [Webhooks]
+      operationId: createWebhookSubscription
+      summary: Registra un destino allowlisted para eventos de Snap Play.
+      security:
+        - oauth2: ["webhooks:write"]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organization_id, url, event_types]
+              properties:
+                organization_id:
+                  type: string
+                  format: uuid
+                url:
+                  type: string
+                  format: uri
+                event_types:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: string
+                data_policy_id:
+                  type: string
+                  format: uuid
+      responses:
+        "201":
+          description: Subscription creada; el secret se devuelve una sola vez.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, status, signing_secret]
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [PENDING_VERIFICATION, ACTIVE]
+                  signing_secret:
+                    type: string
+                    writeOnly: true
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/partner/events:
+    post:
+      tags: [Partner Ingress]
+      operationId: ingestPartnerEvent
+      summary: Recibe eventos CloudEvents firmados de Rappi u otro provider.
+      security:
+        - mutualTLS: []
+          partnerOAuth2: ["orders:write"]
+          webhookSignature: []
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+        - $ref: "#/components/parameters/EventTimestamp"
+        - $ref: "#/components/parameters/EventSignature"
+      requestBody:
+        required: true
+        content:
+          application/cloudevents+json:
+            schema:
+              $ref: "#/components/schemas/PartnerCloudEvent"
+      responses:
+        "202":
+          description: Evento autenticado, persistido y aceptado para procesamiento.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [event_id, accepted, duplicate]
+                properties:
+                  event_id:
+                    type: string
+                  accepted:
+                    type: boolean
+                  duplicate:
+                    type: boolean
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          description: Evento autenticado pero schema o transición inválidos.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /v1/partner/catalog/imports:
+    post:
+      tags: [Partner Ingress]
+      operationId: createPartnerCatalogImport
+      summary: Registra un snapshot de catálogo o lote incremental provisto por un partner.
+      security:
+        - mutualTLS: []
+          partnerOAuth2: ["catalog:write"]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                [
+                  connection_id,
+                  mode,
+                  schema_version,
+                  object_url,
+                  checksum_sha256,
+                ]
+              properties:
+                connection_id:
+                  type: string
+                  format: uuid
+                mode:
+                  type: string
+                  enum: [FULL, INCREMENTAL]
+                schema_version:
+                  type: string
+                object_url:
+                  type: string
+                  format: uri
+                checksum_sha256:
+                  type: string
+                  pattern: "^[a-f0-9]{64}$"
+                record_count:
+                  type: integer
+                  minimum: 0
+      responses:
+        "202":
+          description: Import aceptado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogSync"
+        default:
+          $ref: "#/components/responses/Problem"
+
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: OIDC/OAuth para backoffice y APIs delegadas.
+      flows:
+        authorizationCode:
+          authorizationUrl: https://identity.snapplay.io/oauth2/authorize
+          tokenUrl: https://identity.snapplay.io/oauth2/token
+          scopes:
+            organizations:read: Leer organizaciones.
+            organizations:write: Administrar organizaciones.
+            privacy:write: Administrar políticas de datos.
+            connections:read: Leer conexiones.
+            connections:write: Administrar conexiones.
+            catalog:read: Leer catálogo.
+            catalog:write: Sincronizar catálogo.
+            experiences:read: Leer experiences.
+            experiences:write: Editar experiences.
+            experiences:publish: Publicar versions.
+            links:write: Administrar smart links.
+            orders:read: Leer órdenes autorizadas.
+            analytics:read: Leer analytics autorizados.
+            contracts:write: Editar contratos.
+            contracts:approve: Aprobar contratos.
+            settlements:read: Leer settlements.
+            settlements:calculate: Calcular settlements.
+            webhooks:write: Administrar webhooks.
+    partnerOAuth2:
+      type: oauth2
+      description: Client Credentials para partners.
+      flows:
+        clientCredentials:
+          tokenUrl: https://identity.snapplay.io/oauth2/token
+          scopes:
+            catalog:write: Enviar catálogo.
+            orders:write: Enviar eventos de órdenes.
+            orders:read: Consultar reconciliación autorizada.
+    mutualTLS:
+      type: mutualTLS
+    webhookSignature:
+      type: apiKey
+      in: header
+      name: X-SnapPlay-Signature
+      description: HMAC SHA-256 sobre `timestamp + "." + raw_body`.
+    handoffToken:
+      type: http
+      scheme: bearer
+      bearerFormat: Short-lived scoped JWT
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: UUID/ULID único por operación y principal, conservado al menos 24 horas.
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    ConnectionId:
+      name: connectionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ExperienceId:
+      name: experienceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ContractId:
+      name: contractId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    SettlementId:
+      name: settlementId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    EventId:
+      name: X-SnapPlay-Event-Id
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+    EventTimestamp:
+      name: X-SnapPlay-Timestamp
+      in: header
+      required: true
+      schema:
+        type: integer
+        format: int64
+    EventSignature:
+      name: X-SnapPlay-Signature
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: "^v[0-9]+=.+$"
+
+  responses:
+    Problem:
+      description: Error estándar RFC 9457.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: Recurso inexistente o no visible para el tenant.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Conflict:
+      description: Conflicto de unicidad, estado o versión.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Unauthorized:
+      description: Autenticación o firma inválida.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Forbidden:
+      description: Scope, rol, tenant o data policy insuficiente.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    RateLimited:
+      description: Rate limit excedido.
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+  schemas:
+    DataSharingMode:
+      type: string
+      enum: [AGGREGATED, PSEUDONYMOUS, IDENTIFIED_WITH_CONSENT, BILLING_ONLY]
+    CreateDataSharingPolicyRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - owner_organization_id
+        - name
+        - mode
+        - allowed_fields
+        - purposes
+        - consent_required
+      properties:
+        owner_organization_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 2
+          maxLength: 160
+        mode:
+          $ref: "#/components/schemas/DataSharingMode"
+        allowed_fields:
+          type: array
+          items:
+            type: string
+        purposes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum:
+              [
+                ATTRIBUTION,
+                ANALYTICS,
+                BILLING,
+                RECONCILIATION,
+                AUDIT,
+                USER_EXPERIENCE,
+              ]
+        retention_days:
+          type: [integer, "null"]
+          minimum: 1
+        consent_required:
+          type: boolean
+    DataSharingPolicy:
+      allOf:
+        - $ref: "#/components/schemas/CreateDataSharingPolicyRequest"
+        - type: object
+          required: [id, version, status, created_at]
+          properties:
+            id:
+              type: string
+              format: uuid
+            version:
+              type: integer
+              minimum: 1
+            status:
+              type: string
+              enum: [DRAFT, APPROVED, RETIRED]
+            approved_at:
+              type: [string, "null"]
+              format: date-time
+            created_at:
+              type: string
+              format: date-time
+    OrganizationType:
+      type: string
+      enum: [CONTENT_PROVIDER, COMMERCE_PROVIDER, ORCHESTRATOR, BRAND, MERCHANT]
+    Organization:
+      type: object
+      required:
+        [
+          id,
+          legal_name,
+          display_name,
+          organization_type,
+          status,
+          country,
+          created_at,
+        ]
+      properties:
+        id:
+          type: string
+          format: uuid
+        legal_name:
+          type: string
+        display_name:
+          type: string
+        organization_type:
+          $ref: "#/components/schemas/OrganizationType"
+        status:
+          type: string
+          enum: [PENDING, ACTIVE, SUSPENDED, CLOSED]
+        country:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        default_currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        timezone:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    CreateOrganizationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          legal_name,
+          display_name,
+          organization_type,
+          country,
+          default_currency,
+          timezone,
+        ]
+      properties:
+        legal_name:
+          type: string
+          minLength: 2
+          maxLength: 200
+        display_name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        organization_type:
+          $ref: "#/components/schemas/OrganizationType"
+        country:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        default_currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        timezone:
+          type: string
+
+    ConnectionCapabilities:
+      type: object
+      additionalProperties: false
+      required: [catalog, handoff, orders]
+      properties:
+        catalog:
+          type: object
+          required: [mode]
+          properties:
+            mode:
+              type: string
+              enum: [PULL_CURSOR, PUSH_WEBHOOK, SNAPSHOT_FILE]
+            supports_inventory:
+              type: boolean
+            supports_store_level_price:
+              type: boolean
+        handoff:
+          type: object
+          required: [modes, supports_tracking_token]
+          properties:
+            modes:
+              type: array
+              minItems: 1
+              items:
+                $ref: "#/components/schemas/HandoffMode"
+            supports_product_filter:
+              type: boolean
+            supports_tracking_token:
+              type: boolean
+        orders:
+          type: object
+          properties:
+            supports_webhooks:
+              type: boolean
+            supports_reconciliation_pull:
+              type: boolean
+    CreateConnectionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - content_organization_id
+        - commerce_organization_id
+        - connector_key
+        - environment
+        - territories
+        - capabilities
+        - data_sharing_policy_id
+      properties:
+        name:
+          type: string
+          maxLength: 160
+        content_organization_id:
+          type: string
+          format: uuid
+        commerce_organization_id:
+          type: string
+          format: uuid
+        connector_key:
+          type: string
+          pattern: "^[a-z][a-z0-9_-]{1,49}$"
+        environment:
+          type: string
+          enum: [SANDBOX, PRODUCTION]
+        territories:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: "^[A-Z]{2}$"
+        capabilities:
+          $ref: "#/components/schemas/ConnectionCapabilities"
+        data_sharing_policy_id:
+          type: string
+          format: uuid
+    Connection:
+      allOf:
+        - $ref: "#/components/schemas/CreateConnectionRequest"
+        - type: object
+          required: [id, status, health, created_at]
+          properties:
+            id:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [PENDING, ACTIVE, DEGRADED, SUSPENDED, CLOSED]
+            health:
+              type: object
+              properties:
+                catalog_last_synced_at:
+                  type: [string, "null"]
+                  format: date-time
+                last_event_received_at:
+                  type: [string, "null"]
+                  format: date-time
+                adapter_version:
+                  type: string
+            created_at:
+              type: string
+              format: date-time
+
+    CatalogSync:
+      type: object
+      required: [id, connection_id, mode, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        connection_id:
+          type: string
+          format: uuid
+        mode:
+          type: string
+          enum: [FULL, INCREMENTAL]
+        status:
+          type: string
+          enum: [QUEUED, RUNNING, SUCCEEDED, PARTIALLY_SUCCEEDED, FAILED]
+        records_seen:
+          type: integer
+          minimum: 0
+        records_rejected:
+          type: integer
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+    CatalogProduct:
+      type: object
+      required:
+        - id
+        - connection_id
+        - provider_product_id
+        - name
+        - image_url
+        - status
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        connection_id:
+          type: string
+          format: uuid
+        provider_product_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: [string, "null"]
+        image_url:
+          type: string
+          format: uri
+        brand:
+          type: [string, "null"]
+        categories:
+          type: array
+          items:
+            type: string
+        gtin:
+          type: [string, "null"]
+        age_restricted:
+          type: boolean
+        reference_price_minor:
+          type: [integer, "null"]
+          minimum: 0
+        currency:
+          type: [string, "null"]
+          pattern: "^[A-Z]{3}$"
+        store_scope:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateContentContextRequest:
+      type: object
+      additionalProperties: false
+      required:
+        [organization_id, channel_key, external_ref, context_type, title]
+      properties:
+        organization_id:
+          type: string
+          format: uuid
+        channel_key:
+          type: string
+        external_ref:
+          type: string
+          maxLength: 200
+        context_type:
+          type: string
+          enum:
+            [
+              CHANNEL,
+              MOVIE,
+              SERIES,
+              EPISODE,
+              LIVE_EVENT,
+              COURSE,
+              LESSON,
+              EDITORIAL,
+            ]
+        title:
+          type: string
+          maxLength: 200
+        metadata:
+          type: object
+          additionalProperties: true
+    ContentContext:
+      allOf:
+        - $ref: "#/components/schemas/CreateContentContextRequest"
+        - type: object
+          required: [id, created_at]
+          properties:
+            id:
+              type: string
+              format: uuid
+            created_at:
+              type: string
+              format: date-time
+
+    HandoffMode:
+      type: string
+      enum: [STORE_DEEPLINK, DYNAMIC_STOREFRONT, CART_HANDOFF, ORDER_API]
+    CreateExperienceRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - organization_id
+        - name
+        - content_context_id
+        - connection_id
+        - contract_id
+        - handoff_mode
+        - offer
+        - eligibility
+        - presentation
+      properties:
+        organization_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 160
+        content_context_id:
+          type: string
+          format: uuid
+        connection_id:
+          type: string
+          format: uuid
+        contract_id:
+          type: string
+          format: uuid
+        handoff_mode:
+          $ref: "#/components/schemas/HandoffMode"
+        store_selection:
+          type: object
+          required: [strategy]
+          properties:
+            strategy:
+              type: string
+              enum: [FIXED_STORE, PROVIDER_RESOLVES_LOCATION, ROUTING_RULE]
+            fallback_store_id:
+              type: [string, "null"]
+        offer:
+          type: object
+          required: [title, product_refs]
+          properties:
+            title:
+              type: string
+              maxLength: 160
+            product_refs:
+              type: array
+              items:
+                type: object
+                required: [provider_product_id]
+                properties:
+                  provider_product_id:
+                    type: string
+                  required:
+                    type: boolean
+                    default: false
+                  priority:
+                    type: integer
+                    minimum: 0
+            fallback_collection_id:
+              type: [string, "null"]
+        eligibility:
+          type: object
+          required: [countries, starts_at]
+          properties:
+            countries:
+              type: array
+              minItems: 1
+              items:
+                type: string
+                pattern: "^[A-Z]{2}$"
+            starts_at:
+              type: string
+              format: date-time
+            ends_at:
+              type: [string, "null"]
+              format: date-time
+        presentation:
+          type: object
+          required: [locale, headline]
+          properties:
+            locale:
+              type: string
+            headline:
+              type: string
+              maxLength: 160
+            age_restricted:
+              type: boolean
+              default: false
+    Experience:
+      allOf:
+        - $ref: "#/components/schemas/CreateExperienceRequest"
+        - type: object
+          required: [id, version, status, created_at]
+          properties:
+            id:
+              type: string
+              format: uuid
+            version:
+              type: integer
+              minimum: 1
+            status:
+              type: string
+              enum: [DRAFT, IN_REVIEW, PUBLISHED, PAUSED, RETIRED]
+            published_at:
+              type: [string, "null"]
+              format: date-time
+            created_at:
+              type: string
+              format: date-time
+
+    SmartLink:
+      type: object
+      required:
+        [
+          id,
+          short_code,
+          url,
+          qr_image_url,
+          experience_id,
+          placement_key,
+          status,
+          created_at,
+        ]
+      properties:
+        id:
+          type: string
+          format: uuid
+        short_code:
+          type: string
+        url:
+          type: string
+          format: uri
+          examples: ["https://go.snapplay.io/r/7E1vM2kP9xQ4"]
+        qr_image_url:
+          type: string
+          format: uri
+        experience_id:
+          type: string
+          format: uuid
+        placement_key:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, PAUSED, EXPIRED, RETIRED]
+        created_at:
+          type: string
+          format: date-time
+
+    OrderStatus:
+      type: string
+      enum:
+        - PLACED
+        - CONFIRMED
+        - PREPARING
+        - COURIER_ASSIGNED
+        - PICKED_UP
+        - NEAR_DESTINATION
+        - ARRIVED_AT_DESTINATION
+        - DELIVERED
+        - REJECTED
+        - CANCELLED
+        - PARTIALLY_REFUNDED
+        - REFUNDED
+        - FAILED
+    HandoffStatus:
+      type: object
+      required: [handoff_id, status, updated_at]
+      properties:
+        handoff_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - CREATED
+            - DESTINATION_RESOLVED
+            - REDIRECTED
+            - CHECKOUT_STARTED
+            - CONVERTED
+            - EXPIRED
+            - FAILED
+        order_status:
+          oneOf:
+            - $ref: "#/components/schemas/OrderStatus"
+            - type: "null"
+        display_message:
+          type: [string, "null"]
+          examples: [Tu pedido está llegando]
+        updated_at:
+          type: string
+          format: date-time
+    OrderItem:
+      type: object
+      required: [name, quantity, unit_amount_minor, total_amount_minor]
+      properties:
+        provider_product_id:
+          type: [string, "null"]
+        name:
+          type: string
+        category:
+          type: [string, "null"]
+        quantity:
+          type: integer
+          minimum: 1
+        unit_amount_minor:
+          type: integer
+        total_amount_minor:
+          type: integer
+        eligible_for_revenue_share:
+          type: boolean
+    ProviderOrder:
+      type: object
+      required:
+        - id
+        - handoff_id
+        - connection_id
+        - provider_order_ref
+        - status
+        - currency
+        - order_total_minor
+        - placed_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        handoff_id:
+          type: string
+          format: uuid
+        connection_id:
+          type: string
+          format: uuid
+        provider_order_ref:
+          type: string
+          description: Puede devolverse seudonimizado según data policy.
+        publisher_user_ref:
+          type: [string, "null"]
+          description: Sólo visible en políticas seudónimas o identificadas.
+        status:
+          $ref: "#/components/schemas/OrderStatus"
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        order_total_minor:
+          type: integer
+        eligible_item_value_minor:
+          type: [integer, "null"]
+        items:
+          type: [array, "null"]
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        contract_version_id:
+          type: [string, "null"]
+          format: uuid
+        placed_at:
+          type: string
+          format: date-time
+        delivered_at:
+          type: [string, "null"]
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    SalesAnalytics:
+      type: object
+      required: [from, to, currency, totals, series]
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        currency:
+          type: string
+        totals:
+          type: object
+          required: [scans, handoffs, orders, delivered_orders, gmv_minor]
+          properties:
+            scans:
+              type: integer
+            handoffs:
+              type: integer
+            orders:
+              type: integer
+            delivered_orders:
+              type: integer
+            gmv_minor:
+              type: integer
+            scan_to_delivered_rate:
+              type: number
+        series:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    CreateContractRequest:
+      type: object
+      additionalProperties: false
+      required: [name, publisher_org_id, commerce_org_id, territories]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        publisher_org_id:
+          type: string
+          format: uuid
+        commerce_org_id:
+          type: string
+          format: uuid
+        territories:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: "^[A-Z]{2}$"
+    CommercialContract:
+      allOf:
+        - $ref: "#/components/schemas/CreateContractRequest"
+        - type: object
+          required: [id, status, created_at]
+          properties:
+            id:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [DRAFT, ACTIVE, EXPIRED, TERMINATED]
+            created_at:
+              type: string
+              format: date-time
+    CreateContractVersionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - currency
+        - effective_from
+        - billable_event
+        - settlement_frequency
+        - data_policy_id
+        - rules
+      properties:
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        effective_from:
+          type: string
+          format: date-time
+        effective_to:
+          type: [string, "null"]
+          format: date-time
+        billable_event:
+          type: string
+          enum:
+            [
+              ORDER_PLACED,
+              ORDER_CONFIRMED,
+              DELIVERED,
+              REFUND_WINDOW_ELAPSED,
+              PROVIDER_SETTLED,
+            ]
+        refund_window_days:
+          type: integer
+          minimum: 0
+          maximum: 180
+        settlement_frequency:
+          type: string
+          enum: [WEEKLY, MONTHLY, QUARTERLY]
+        data_policy_id:
+          type: string
+          format: uuid
+        rules:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/CommercialRule"
+    CommercialRule:
+      type: object
+      additionalProperties: false
+      required: [rule_key, rule_type, basis]
+      properties:
+        rule_key:
+          type: string
+          pattern: "^[a-z][a-z0-9._-]{1,79}$"
+        rule_type:
+          type: string
+          enum: [ORCHESTRATION_FEE, REVENUE_SHARE]
+        beneficiary_org_id:
+          type: [string, "null"]
+          format: uuid
+        basis:
+          type: string
+          enum:
+            - ORDER_TOTAL
+            - ITEM_GROSS_VALUE
+            - ITEM_NET_VALUE
+            - ELIGIBLE_ITEM_VALUE
+            - DELIVERY_FEE
+            - FIXED_PER_CONVERTED_ORDER
+        fixed_amount_minor:
+          type: [integer, "null"]
+        rate_bps:
+          type: [integer, "null"]
+          minimum: 0
+          maximum: 10000
+        eligible_product_ids:
+          type: array
+          items:
+            type: string
+        eligible_categories:
+          type: array
+          items:
+            type: string
+        tax_treatment:
+          type: string
+          enum: [INCLUSIVE, EXCLUSIVE, NOT_APPLICABLE]
+    ContractVersion:
+      allOf:
+        - $ref: "#/components/schemas/CreateContractVersionRequest"
+        - type: object
+          required: [id, contract_id, version, status, created_at]
+          properties:
+            id:
+              type: string
+              format: uuid
+            contract_id:
+              type: string
+              format: uuid
+            version:
+              type: integer
+            status:
+              type: string
+              enum: [DRAFT, IN_REVIEW, APPROVED, SUPERSEDED]
+            approved_at:
+              type: [string, "null"]
+              format: date-time
+            created_at:
+              type: string
+              format: date-time
+
+    Settlement:
+      type: object
+      required:
+        - id
+        - contract_id
+        - period_start
+        - period_end
+        - currency
+        - status
+        - totals
+      properties:
+        id:
+          type: string
+          format: uuid
+        contract_id:
+          type: string
+          format: uuid
+        period_start:
+          type: string
+          format: date-time
+        period_end:
+          type: string
+          format: date-time
+        currency:
+          type: string
+        status:
+          type: string
+          enum:
+            [
+              OPEN,
+              CALCULATED,
+              REVIEW,
+              APPROVED,
+              ISSUED,
+              PAID,
+              CLOSED,
+              DISPUTED,
+              VOIDED,
+            ]
+        totals:
+          type: object
+          properties:
+            billable_orders:
+              type: integer
+            gmv_minor:
+              type: integer
+            snapplay_fee_minor:
+              type: integer
+            revenue_share_minor:
+              type: integer
+            adjustments_minor:
+              type: integer
+            net_payable_minor:
+              type: integer
+
+    PartnerCloudEvent:
+      type: object
+      additionalProperties: false
+      required:
+        [specversion, id, source, type, subject, time, datacontenttype, data]
+      properties:
+        specversion:
+          type: string
+          const: "1.0"
+        id:
+          type: string
+        source:
+          type: string
+          format: uri-reference
+        type:
+          type: string
+          examples: [com.rappi.order.delivered.v1]
+        subject:
+          type: string
+          examples: [orders/order_884031]
+        time:
+          type: string
+          format: date-time
+        datacontenttype:
+          type: string
+          const: application/json
+        dataschema:
+          type: string
+          format: uri
+        data:
+          type: object
+          required:
+            [
+              connection_id,
+              provider_order_ref,
+              tracking_token,
+              status,
+              occurred_at,
+            ]
+          properties:
+            connection_id:
+              type: string
+              format: uuid
+            provider_order_ref:
+              type: string
+            tracking_token:
+              type: string
+              description: Token opaco emitido por Snap Play y propagado por el provider.
+            status:
+              $ref: "#/components/schemas/OrderStatus"
+            currency:
+              type: [string, "null"]
+            order_total_minor:
+              type: [integer, "null"]
+            eligible_item_value_minor:
+              type: [integer, "null"]
+            items:
+              type: [array, "null"]
+              items:
+                $ref: "#/components/schemas/OrderItem"
+            occurred_at:
+              type: string
+              format: date-time
+
+    Problem:
+      type: object
+      required: [type, title, status, detail, request_id]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        request_id:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              code:
+                type: string
+              message:
+                type: string

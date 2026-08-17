@@ -1,0 +1,33 @@
+{
+  "name": "snap-play",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Snap Play orchestration platform — Disney × Rappi pilot",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "predev": "npm run build -w @snapplay/contracts",
+    "dev": "concurrently -n api,backoffice -c cyan,magenta \"npm run dev -w @snapplay/api\" \"npm run dev -w @snapplay/backoffice\"",
+    "dev:api": "npm run dev -w @snapplay/api",
+    "dev:backoffice": "npm run dev -w @snapplay/backoffice",
+    "build": "npm run build -w @snapplay/contracts && npm run build -w @snapplay/api && npm run build -w @snapplay/backoffice",
+    "lint": "npm run lint --workspaces --if-present",
+    "pretypecheck": "npm run build -w @snapplay/contracts",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "seed:auth": "node --env-file=.env.local scripts/create-dev-user.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "prettier": "^3.6.2",
+    "supabase": "^2.114.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20.9"
+  }
+}

@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+.npm/
+
+# builds
+.next/
+dist/
+coverage/
+*.tsbuildinfo
+
+# secrets — never commit
+.env
+.env.*
+!.env.example
+!apps/*/.env.example
+apps/*/.env.local
+supabase/.temp/
+supabase/.branches/
+
+# local tooling
+.DS_Store
+*.log
+
+# generated
+apps/backoffice/src/lib/database.types.ts
+tmp/
