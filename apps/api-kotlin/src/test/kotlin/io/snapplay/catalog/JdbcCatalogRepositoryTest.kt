@@ -1,5 +1,8 @@
 package io.snapplay.catalog
 
+import io.snapplay.catalog.application.port.output.CatalogRepository
+import io.snapplay.catalog.application.port.output.ProductFilters
+import io.snapplay.catalog.domain.ProductStatus
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

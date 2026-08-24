@@ -1,5 +1,9 @@
-package io.snapplay.catalog
+package io.snapplay.catalog.infrastructure.web
 
+import io.snapplay.catalog.application.port.input.ListProductsUseCase
+import io.snapplay.catalog.application.port.output.ProductFilters
+import io.snapplay.catalog.domain.CatalogProduct
+import io.snapplay.catalog.domain.ProductStatus
 import io.snapplay.common.ValidationException
 import io.snapplay.config.SnapPlayProperties
 import io.snapplay.identity.PrincipalResolver
@@ -19,7 +23,7 @@ data class ProductListResponse(
 @RequestMapping("/v1/catalog")
 class CatalogController(
     private val principalResolver: PrincipalResolver,
-    private val catalogRepository: CatalogRepository,
+    private val listProductsUseCase: ListProductsUseCase,
     private val props: SnapPlayProperties,
 ) {
     @GetMapping("/products")
@@ -43,7 +47,7 @@ class CatalogController(
                         }
                     },
             )
-        val result = catalogRepository.findProducts(principal.organizationId, filters, safeLimit, cursor)
+        val result = listProductsUseCase.list(principal, filters, safeLimit, cursor)
         return ProductListResponse(
             items = result.items,
             total = result.items.size,

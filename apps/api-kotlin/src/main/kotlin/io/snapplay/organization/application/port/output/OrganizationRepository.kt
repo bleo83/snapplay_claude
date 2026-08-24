@@ -1,5 +1,6 @@
-package io.snapplay.organization
+package io.snapplay.organization.application.port.output
 
+import io.snapplay.organization.domain.OrganizationProfile
 import java.util.UUID
 
 data class UpdateOrganizationInput(

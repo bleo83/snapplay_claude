@@ -1,6 +1,11 @@
-package io.snapplay.organization
+package io.snapplay.organization.infrastructure.persistence
 
 import io.snapplay.common.NotFoundException
+import io.snapplay.organization.application.port.output.OrganizationRepository
+import io.snapplay.organization.application.port.output.UpdateOrganizationInput
+import io.snapplay.organization.domain.OrganizationProfile
+import io.snapplay.organization.domain.OrganizationStatus
+import io.snapplay.organization.domain.OrganizationType
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.RowMapper

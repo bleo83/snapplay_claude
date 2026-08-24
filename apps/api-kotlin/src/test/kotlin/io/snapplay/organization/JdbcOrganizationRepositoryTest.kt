@@ -1,5 +1,9 @@
 package io.snapplay.organization
 
+import io.snapplay.organization.application.port.output.OrganizationRepository
+import io.snapplay.organization.application.port.output.UpdateOrganizationInput
+import io.snapplay.organization.domain.OrganizationStatus
+import io.snapplay.organization.domain.OrganizationType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

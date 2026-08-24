@@ -3,6 +3,7 @@ package io.snapplay.config
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.MDC
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
 import java.util.UUID
@@ -17,6 +18,11 @@ class RequestIdFilter : OncePerRequestFilter() {
         val requestId = UUID.randomUUID().toString()
         request.setAttribute("snapplay.requestId", requestId)
         response.setHeader("X-Request-Id", requestId)
-        filterChain.doFilter(request, response)
+        MDC.put("requestId", requestId)
+        try {
+            filterChain.doFilter(request, response)
+        } finally {
+            MDC.remove("requestId")
+        }
     }
 }
