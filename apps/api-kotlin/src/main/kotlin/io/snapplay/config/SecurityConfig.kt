@@ -13,7 +13,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
 @EnableWebSecurity
-class SecurityConfig(private val props: SnapPlayProperties) {
+class SecurityConfig(
+    private val props: SnapPlayProperties,
+    @org.springframework.beans.factory.annotation.Value("\${spring.security.oauth2.resourceserver.jwt.jwk-set-uri:}")
+    private val jwksUri: String,
+) {
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
@@ -52,12 +56,16 @@ class SecurityConfig(private val props: SnapPlayProperties) {
                     .requestMatchers("/health").permitAll()
                     .requestMatchers("/r/**").permitAll()
                     .requestMatchers("/v1/partner/events").permitAll()
-                    .requestMatchers("/v1/**").authenticated()
-                    .anyRequest().permitAll()
+                if (jwksUri.isNotBlank()) {
+                    auth.requestMatchers("/v1/**").authenticated()
+                } else {
+                    auth.requestMatchers("/v1/**").permitAll()
+                }
+                auth.anyRequest().permitAll()
             }
-            .oauth2ResourceServer { oauth2 ->
-                oauth2.jwt { }
-            }
+        if (jwksUri.isNotBlank()) {
+            http.oauth2ResourceServer { oauth2 -> oauth2.jwt { } }
+        }
         return http.build()
     }
 }
