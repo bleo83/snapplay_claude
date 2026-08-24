@@ -1,5 +1,6 @@
 package io.snapplay.links.infrastructure.persistence
 
+import io.snapplay.common.PageResult
 import io.snapplay.config.SnapPlayProperties
 import io.snapplay.links.application.port.output.SmartLinkRepository
 import io.snapplay.links.domain.SmartLink
@@ -13,7 +14,7 @@ import java.util.UUID
 class DemoSmartLinkRepository(
     private val props: SnapPlayProperties,
 ) : SmartLinkRepository {
-    override fun findAll(organizationId: UUID): List<SmartLink> =
+    private val links =
         listOf(
             SmartLink(
                 id = UUID.fromString("9ab6732c-093d-4fee-8efa-b5d2b6ec4d1f"),
@@ -36,4 +37,10 @@ class DemoSmartLinkRepository(
                 conversions = 771,
             ),
         )
+
+    override fun findAll(
+        organizationId: UUID,
+        limit: Int,
+        cursor: String?,
+    ): PageResult<SmartLink> = PageResult(items = links.take(limit), nextCursor = null)
 }

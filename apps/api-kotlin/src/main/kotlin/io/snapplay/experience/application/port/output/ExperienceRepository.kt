@@ -1,5 +1,6 @@
 package io.snapplay.experience.application.port.output
 
+import io.snapplay.common.PageResult
 import io.snapplay.experience.domain.Experience
 import io.snapplay.experience.domain.HandoffMode
 import java.time.Instant
@@ -24,7 +25,11 @@ data class CreateExperienceInput(
 )
 
 interface ExperienceRepository {
-    fun findAll(organizationId: UUID): List<Experience>
+    fun findAll(
+        organizationId: UUID,
+        limit: Int,
+        cursor: String?,
+    ): PageResult<Experience>
 
     fun findContentContext(
         organizationId: UUID,

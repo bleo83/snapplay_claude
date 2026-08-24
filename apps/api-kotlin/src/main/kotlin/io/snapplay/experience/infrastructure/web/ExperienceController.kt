@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
@@ -30,6 +31,7 @@ data class CreateExperienceRequest(
 
 data class ExperienceListResponse(
     val items: List<Experience>,
+    val nextCursor: String?,
 )
 
 @RestController
@@ -40,9 +42,14 @@ class ExperienceController(
     private val createExperienceUseCase: CreateExperienceUseCase,
 ) {
     @GetMapping
-    fun list(): ExperienceListResponse {
+    fun list(
+        @RequestParam(defaultValue = "50") limit: Int,
+        @RequestParam cursor: String? = null,
+    ): ExperienceListResponse {
+        val safeLimit = limit.coerceIn(1, 200)
         val principal = principalResolver.resolve()
-        return ExperienceListResponse(listExperiencesUseCase.list(principal))
+        val result = listExperiencesUseCase.list(principal, safeLimit, cursor)
+        return ExperienceListResponse(items = result.items, nextCursor = result.nextCursor)
     }
 
     @PostMapping

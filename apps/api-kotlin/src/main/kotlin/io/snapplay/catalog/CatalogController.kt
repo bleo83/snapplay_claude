@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 data class ProductListResponse(
     val items: List<CatalogProduct>,
     val total: Int,
+    val nextCursor: String?,
     val source: String,
 )
 
@@ -26,7 +27,10 @@ class CatalogController(
         @RequestParam q: String?,
         @RequestParam category: String?,
         @RequestParam status: String?,
+        @RequestParam(defaultValue = "50") limit: Int,
+        @RequestParam cursor: String? = null,
     ): ProductListResponse {
+        val safeLimit = limit.coerceIn(1, 200)
         val principal = principalResolver.resolve()
         val filters =
             ProductFilters(
@@ -39,10 +43,11 @@ class CatalogController(
                         }
                     },
             )
-        val items = catalogRepository.findProducts(principal.organizationId, filters)
+        val result = catalogRepository.findProducts(principal.organizationId, filters, safeLimit, cursor)
         return ProductListResponse(
-            items = items,
-            total = items.size,
+            items = result.items,
+            total = result.items.size,
+            nextCursor = result.nextCursor,
             source = if (props.demo) "demo" else "supabase",
         )
     }
