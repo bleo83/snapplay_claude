@@ -159,7 +159,7 @@ class JdbcExperienceRepositoryTest {
 
     @Test
     fun `findAll returns empty list when no experiences exist`() {
-        assertThat(repository.findAll(orgId)).isEmpty()
+        assertThat(repository.findAll(orgId, 50, null).items).isEmpty()
     }
 
     @Test
@@ -181,10 +181,10 @@ class JdbcExperienceRepositoryTest {
     fun `findAll returns created experience with correct joins`() {
         repository.create(orgId, UUID.randomUUID(), buildInput())
 
-        val experiences = repository.findAll(orgId)
-        assertThat(experiences).hasSize(1)
-        assertThat(experiences.first().contextTitle).isEqualTo("Toy Story")
-        assertThat(experiences.first().channel).isEqualTo("Disney+")
+        val result = repository.findAll(orgId, 50, null)
+        assertThat(result.items).hasSize(1)
+        assertThat(result.items.first().contextTitle).isEqualTo("Toy Story")
+        assertThat(result.items.first().channel).isEqualTo("Disney+")
     }
 
     private fun buildInput() =

@@ -1,5 +1,6 @@
 package io.snapplay.catalog
 
+import io.snapplay.common.PageResult
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Repository
 import java.util.UUID
@@ -92,16 +93,20 @@ class DemoCatalogRepository : CatalogRepository {
     override fun findProducts(
         organizationId: UUID,
         filters: ProductFilters,
-    ): List<CatalogProduct> {
+        limit: Int,
+        cursor: String?,
+    ): PageResult<CatalogProduct> {
         val query = filters.q?.trim()?.lowercase()
-        return products.filter { product ->
-            val matchesText =
-                query == null ||
-                    product.name.lowercase().contains(query) ||
-                    product.description?.lowercase()?.contains(query) == true
-            val matchesCategory = filters.category == null || filters.category in product.categories
-            val matchesStatus = filters.status == null || product.status == filters.status
-            matchesText && matchesCategory && matchesStatus
-        }
+        val filtered =
+            products.filter { product ->
+                val matchesText =
+                    query == null ||
+                        product.name.lowercase().contains(query) ||
+                        product.description?.lowercase()?.contains(query) == true
+                val matchesCategory = filters.category == null || filters.category in product.categories
+                val matchesStatus = filters.status == null || product.status == filters.status
+                matchesText && matchesCategory && matchesStatus
+            }
+        return PageResult(items = filtered.take(limit), nextCursor = null)
     }
 }

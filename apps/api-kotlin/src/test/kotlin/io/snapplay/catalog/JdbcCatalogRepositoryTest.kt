@@ -108,34 +108,55 @@ class JdbcCatalogRepositoryTest {
 
     @Test
     fun `findProducts returns all products for org with no filters`() {
-        val products = repository.findProducts(orgId, ProductFilters())
-        assertThat(products).hasSize(3)
+        val result = repository.findProducts(orgId, ProductFilters(), 50, null)
+        assertThat(result.items).hasSize(3)
+        assertThat(result.nextCursor).isNull()
     }
 
     @Test
     fun `findProducts filters by status ACTIVE`() {
-        val products = repository.findProducts(orgId, ProductFilters(status = ProductStatus.ACTIVE))
-        assertThat(products).hasSize(2)
-        assertThat(products).allMatch { it.status == ProductStatus.ACTIVE }
+        val result = repository.findProducts(orgId, ProductFilters(status = ProductStatus.ACTIVE), 50, null)
+        assertThat(result.items).hasSize(2)
+        assertThat(result.items).allMatch { it.status == ProductStatus.ACTIVE }
     }
 
     @Test
     fun `findProducts filters by category`() {
-        val products = repository.findProducts(orgId, ProductFilters(category = "movie-night"))
-        assertThat(products).hasSize(1)
-        assertThat(products.first().providerProductId).isEqualTo("sku_cup")
+        val result = repository.findProducts(orgId, ProductFilters(category = "movie-night"), 50, null)
+        assertThat(result.items).hasSize(1)
+        assertThat(result.items.first().providerProductId).isEqualTo("sku_cup")
     }
 
     @Test
     fun `findProducts filters by text query on name`() {
-        val products = repository.findProducts(orgId, ProductFilters(q = "vaso"))
-        assertThat(products).hasSize(1)
-        assertThat(products.first().name).isEqualTo("Vaso Disney")
+        val result = repository.findProducts(orgId, ProductFilters(q = "vaso"), 50, null)
+        assertThat(result.items).hasSize(1)
+        assertThat(result.items.first().name).isEqualTo("Vaso Disney")
     }
 
     @Test
     fun `findProducts returns empty for unknown org`() {
-        val products = repository.findProducts(UUID.randomUUID(), ProductFilters())
-        assertThat(products).isEmpty()
+        val result = repository.findProducts(UUID.randomUUID(), ProductFilters(), 50, null)
+        assertThat(result.items).isEmpty()
+    }
+
+    @Test
+    fun `findProducts respects limit and returns nextCursor when more results exist`() {
+        val result = repository.findProducts(orgId, ProductFilters(), 2, null)
+        assertThat(result.items).hasSize(2)
+        assertThat(result.nextCursor).isNotNull()
+    }
+
+    @Test
+    fun `findProducts cursor fetches next page`() {
+        val page1 = repository.findProducts(orgId, ProductFilters(), 2, null)
+        assertThat(page1.items).hasSize(2)
+
+        val page2 = repository.findProducts(orgId, ProductFilters(), 2, page1.nextCursor)
+        assertThat(page2.items).hasSize(1)
+        assertThat(page2.nextCursor).isNull()
+
+        val allIds = (page1.items + page2.items).map { it.id }
+        assertThat(allIds).doesNotHaveDuplicates()
     }
 }

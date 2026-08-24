@@ -1,5 +1,7 @@
 package io.snapplay.experience.infrastructure.persistence
 
+import io.snapplay.common.Cursor
+import io.snapplay.common.PageResult
 import io.snapplay.experience.application.port.output.ContentContextResult
 import io.snapplay.experience.application.port.output.CreateExperienceInput
 import io.snapplay.experience.application.port.output.ExperienceRepository
@@ -8,7 +10,6 @@ import io.snapplay.experience.domain.ExperienceStatus
 import io.snapplay.experience.domain.HandoffMode
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.jdbc.core.RowMapper
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import java.sql.ResultSet
@@ -21,43 +22,82 @@ import java.util.UUID
 class JdbcExperienceRepository(
     private val jdbc: JdbcTemplate,
 ) : ExperienceRepository {
-    private val rowMapper =
-        RowMapper { rs: ResultSet, _ ->
-            val productIds = (rs.getArray("product_ids")?.array as? kotlin.Array<*>) ?: emptyArray<Any>()
-            Experience(
-                id = UUID.fromString(rs.getString("id")),
-                name = rs.getString("name"),
-                contextTitle = rs.getString("context_title"),
-                channel = rs.getString("channel_display_name"),
-                version = rs.getInt("current_version"),
-                status = ExperienceStatus.valueOf(rs.getString("status")),
-                handoffMode = HandoffMode.valueOf(rs.getString("handoff_mode") ?: "STORE_DEEPLINK"),
-                productCount = productIds.size,
-                startsAt = rs.getTimestamp("effective_from")?.toInstant() ?: Instant.now(),
-                endsAt = rs.getTimestamp("effective_to")?.toInstant(),
-            )
-        }
+    private data class ExperienceRow(
+        val experience: Experience,
+        val createdAt: Instant,
+    )
 
-    override fun findAll(organizationId: UUID): List<Experience> =
-        jdbc.query(
-            """
-            SELECT e.id, e.name, e.status, e.current_version,
-                   cc.title        AS context_title,
-                   ch.display_name AS channel_display_name,
-                   ev.handoff_mode, ev.product_ids,
-                   ev.effective_from, ev.effective_to
-            FROM experiences e
-            JOIN content_contexts cc ON cc.id = e.content_context_id
-            JOIN channels         ch ON ch.id = cc.channel_id
-            LEFT JOIN experience_versions ev
-                   ON ev.experience_id = e.id
-                  AND ev.version = e.current_version
-            WHERE e.organization_id = ?
-            ORDER BY e.created_at DESC
-            """.trimIndent(),
-            rowMapper,
-            organizationId,
+    private fun mapRow(rs: ResultSet): ExperienceRow {
+        val productIds = (rs.getArray("product_ids")?.array as? kotlin.Array<*>) ?: emptyArray<Any>()
+        return ExperienceRow(
+            experience =
+                Experience(
+                    id = UUID.fromString(rs.getString("id")),
+                    name = rs.getString("name"),
+                    contextTitle = rs.getString("context_title"),
+                    channel = rs.getString("channel_display_name"),
+                    version = rs.getInt("current_version"),
+                    status = ExperienceStatus.valueOf(rs.getString("status")),
+                    handoffMode = HandoffMode.valueOf(rs.getString("handoff_mode") ?: "STORE_DEEPLINK"),
+                    productCount = productIds.size,
+                    startsAt = rs.getTimestamp("effective_from")?.toInstant() ?: Instant.now(),
+                    endsAt = rs.getTimestamp("effective_to")?.toInstant(),
+                ),
+            createdAt = rs.getTimestamp("created_at").toInstant(),
         )
+    }
+
+    override fun findAll(
+        organizationId: UUID,
+        limit: Int,
+        cursor: String?,
+    ): PageResult<Experience> {
+        val decoded = cursor?.let { Cursor.decode(it) }
+
+        val sql =
+            buildString {
+                append(
+                    """
+                    SELECT e.id, e.name, e.status, e.current_version, e.created_at,
+                           cc.title        AS context_title,
+                           ch.display_name AS channel_display_name,
+                           ev.handoff_mode, ev.product_ids,
+                           ev.effective_from, ev.effective_to
+                    FROM experiences e
+                    JOIN content_contexts cc ON cc.id = e.content_context_id
+                    JOIN channels         ch ON ch.id = cc.channel_id
+                    LEFT JOIN experience_versions ev
+                           ON ev.experience_id = e.id
+                          AND ev.version = e.current_version
+                    WHERE e.organization_id = ?
+                    """.trimIndent(),
+                )
+                if (decoded != null) {
+                    append("\nAND (e.created_at < ? OR (e.created_at = ? AND e.id < ?::uuid))")
+                }
+                append("\nORDER BY e.created_at DESC, e.id DESC")
+                append("\nLIMIT ?")
+            }
+
+        val params =
+            buildList {
+                add(organizationId)
+                if (decoded != null) {
+                    add(Timestamp.from(decoded.first))
+                    add(Timestamp.from(decoded.first))
+                    add(decoded.second.toString())
+                }
+                add(limit + 1)
+            }
+
+        val rows = jdbc.query(sql, { rs, _ -> mapRow(rs) }, *params.toTypedArray())
+
+        val hasMore = rows.size > limit
+        val page = if (hasMore) rows.take(limit) else rows
+        val nextCursor = if (hasMore) Cursor.encode(page.last().createdAt, page.last().experience.id) else null
+
+        return PageResult(items = page.map { it.experience }, nextCursor = nextCursor)
+    }
 
     override fun findContentContext(
         organizationId: UUID,

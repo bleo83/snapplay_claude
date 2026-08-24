@@ -1,5 +1,6 @@
 package io.snapplay.experience.infrastructure.persistence
 
+import io.snapplay.common.PageResult
 import io.snapplay.experience.application.port.output.ContentContextResult
 import io.snapplay.experience.application.port.output.CreateExperienceInput
 import io.snapplay.experience.application.port.output.ExperienceRepository
@@ -69,7 +70,11 @@ class DemoExperienceRepository : ExperienceRepository {
             ),
         )
 
-    override fun findAll(organizationId: UUID): List<Experience> = experiences.toList()
+    override fun findAll(
+        organizationId: UUID,
+        limit: Int,
+        cursor: String?,
+    ): PageResult<Experience> = PageResult(items = experiences.take(limit), nextCursor = null)
 
     // Demo always resolves to the Disney+ channel regardless of contextTitle
     override fun findContentContext(

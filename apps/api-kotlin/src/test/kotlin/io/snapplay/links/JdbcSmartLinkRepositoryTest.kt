@@ -87,7 +87,7 @@ class JdbcSmartLinkRepositoryTest {
 
     @Test
     fun `findAll returns empty list when no smart links exist`() {
-        assertThat(repository.findAll(orgId)).isEmpty()
+        assertThat(repository.findAll(orgId, 50, null).items).isEmpty()
     }
 
     @Test
@@ -100,7 +100,7 @@ class JdbcSmartLinkRepositoryTest {
             experienceId,
         )
 
-        val links = repository.findAll(orgId)
+        val links = repository.findAll(orgId, 50, null).items
 
         assertThat(links).hasSize(1)
         assertThat(links.first().id).isEqualTo(smartLinkId)
@@ -133,7 +133,7 @@ class JdbcSmartLinkRepositoryTest {
             )
         }
 
-        val links = repository.findAll(orgId)
+        val links = repository.findAll(orgId, 50, null).items
 
         assertThat(links.first().scans).isEqualTo(3)
         assertThat(links.first().conversions).isEqualTo(1)
@@ -153,6 +153,6 @@ class JdbcSmartLinkRepositoryTest {
             experienceId,
         )
 
-        assertThat(repository.findAll(orgId)).isEmpty()
+        assertThat(repository.findAll(orgId, 50, null).items).isEmpty()
     }
 }

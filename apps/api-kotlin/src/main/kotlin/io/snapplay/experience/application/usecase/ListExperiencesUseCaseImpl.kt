@@ -1,5 +1,6 @@
 package io.snapplay.experience.application.usecase
 
+import io.snapplay.common.PageResult
 import io.snapplay.experience.application.port.input.ListExperiencesUseCase
 import io.snapplay.experience.application.port.output.ExperienceRepository
 import io.snapplay.experience.domain.Experience
@@ -10,5 +11,9 @@ import org.springframework.stereotype.Service
 class ListExperiencesUseCaseImpl(
     private val experienceRepository: ExperienceRepository,
 ) : ListExperiencesUseCase {
-    override fun list(principal: RequestPrincipal): List<Experience> = experienceRepository.findAll(principal.organizationId)
+    override fun list(
+        principal: RequestPrincipal,
+        limit: Int,
+        cursor: String?,
+    ): PageResult<Experience> = experienceRepository.findAll(principal.organizationId, limit, cursor)
 }

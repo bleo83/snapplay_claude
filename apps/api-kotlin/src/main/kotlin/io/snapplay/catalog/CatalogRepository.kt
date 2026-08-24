@@ -1,5 +1,6 @@
 package io.snapplay.catalog
 
+import io.snapplay.common.PageResult
 import java.util.UUID
 
 data class ProductFilters(
@@ -8,9 +9,11 @@ data class ProductFilters(
     val status: ProductStatus? = null,
 )
 
-fun interface CatalogRepository {
+interface CatalogRepository {
     fun findProducts(
         organizationId: UUID,
         filters: ProductFilters,
-    ): List<CatalogProduct>
+        limit: Int,
+        cursor: String?,
+    ): PageResult<CatalogProduct>
 }
