@@ -2,6 +2,7 @@ package io.snapplay.experience.infrastructure.persistence
 
 import io.snapplay.common.Cursor
 import io.snapplay.common.PageResult
+import io.snapplay.common.toPageResult
 import io.snapplay.experience.application.port.output.ContentContextResult
 import io.snapplay.experience.application.port.output.CreateExperienceInput
 import io.snapplay.experience.application.port.output.ExperienceRepository
@@ -28,7 +29,7 @@ class JdbcExperienceRepository(
     )
 
     private fun mapRow(rs: ResultSet): ExperienceRow {
-        val productIds = (rs.getArray("product_ids")?.array as? kotlin.Array<*>) ?: emptyArray<Any>()
+        val productIds = (rs.getArray("product_ids")?.array as? Array<*>) ?: emptyArray<Any>()
         return ExperienceRow(
             experience =
                 Experience(
@@ -90,13 +91,8 @@ class JdbcExperienceRepository(
                 add(limit + 1)
             }
 
-        val rows = jdbc.query(sql, { rs, _ -> mapRow(rs) }, *params.toTypedArray())
-
-        val hasMore = rows.size > limit
-        val page = if (hasMore) rows.take(limit) else rows
-        val nextCursor = if (hasMore) Cursor.encode(page.last().createdAt, page.last().experience.id) else null
-
-        return PageResult(items = page.map { it.experience }, nextCursor = nextCursor)
+        return jdbc.query(sql, { rs, _ -> mapRow(rs) }, *params.toTypedArray())
+            .toPageResult(limit, { it.createdAt }, { it.experience.id }, { it.experience })
     }
 
     override fun findContentContext(

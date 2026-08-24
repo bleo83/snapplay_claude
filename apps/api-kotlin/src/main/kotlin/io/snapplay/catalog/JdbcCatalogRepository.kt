@@ -2,6 +2,7 @@ package io.snapplay.catalog
 
 import io.snapplay.common.Cursor
 import io.snapplay.common.PageResult
+import io.snapplay.common.toPageResult
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.RowMapper
@@ -16,7 +17,10 @@ import java.util.UUID
 class JdbcCatalogRepository(
     private val jdbc: JdbcTemplate,
 ) : CatalogRepository {
-    private data class ProductRow(val product: CatalogProduct, val createdAt: Instant)
+    private data class ProductRow(
+        val product: CatalogProduct,
+        val createdAt: Instant,
+    )
 
     private val rowMapper =
         RowMapper { rs: ResultSet, _ ->
@@ -30,7 +34,7 @@ class JdbcCatalogRepository(
                         imageUrl = rs.getString("image_url") ?: "https://placehold.co/640x480?text=Producto",
                         brand = rs.getString("brand"),
                         categories =
-                            (rs.getArray("categories")?.array as? kotlin.Array<*>)
+                            (rs.getArray("categories")?.array as? Array<*>)
                                 ?.filterIsInstance<String>() ?: emptyList(),
                         ageRestricted = rs.getBoolean("age_restricted"),
                         referencePriceMinor =
@@ -96,12 +100,8 @@ class JdbcCatalogRepository(
                 add(limit + 1)
             }
 
-        val rows = jdbc.query(sql, rowMapper, *params.toTypedArray())
-
-        val hasMore = rows.size > limit
-        val page = if (hasMore) rows.take(limit) else rows
-        val nextCursor = if (hasMore) Cursor.encode(page.last().createdAt, page.last().product.id) else null
-
-        return PageResult(items = page.map { it.product }, nextCursor = nextCursor)
+        return jdbc
+            .query(sql, rowMapper, *params.toTypedArray())
+            .toPageResult(limit, { it.createdAt }, { it.product.id }, { it.product })
     }
 }

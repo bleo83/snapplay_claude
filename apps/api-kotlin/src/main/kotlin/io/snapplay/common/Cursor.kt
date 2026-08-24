@@ -20,3 +20,15 @@ object Cursor {
             Instant.ofEpochMilli(decoded.substring(0, colon).toLong()) to UUID.fromString(decoded.substring(colon + 1))
         }.getOrNull()
 }
+
+fun <R, T> List<R>.toPageResult(
+    limit: Int,
+    getCreatedAt: (R) -> Instant,
+    getId: (R) -> UUID,
+    mapItem: (R) -> T,
+): PageResult<T> {
+    val hasMore = size > limit
+    val page = if (hasMore) take(limit) else this
+    val nextCursor = if (hasMore) Cursor.encode(getCreatedAt(page.last()), getId(page.last())) else null
+    return PageResult(items = page.map(mapItem), nextCursor = nextCursor)
+}

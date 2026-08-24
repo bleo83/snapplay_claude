@@ -2,6 +2,7 @@ package io.snapplay.links.infrastructure.persistence
 
 import io.snapplay.common.Cursor
 import io.snapplay.common.PageResult
+import io.snapplay.common.toPageResult
 import io.snapplay.config.SnapPlayProperties
 import io.snapplay.links.application.port.output.SmartLinkRepository
 import io.snapplay.links.domain.SmartLink
@@ -82,12 +83,7 @@ class JdbcSmartLinkRepository(
                 add(limit + 1)
             }
 
-        val rows = jdbc.query(sql, rowMapper, *params.toTypedArray())
-
-        val hasMore = rows.size > limit
-        val page = if (hasMore) rows.take(limit) else rows
-        val nextCursor = if (hasMore) Cursor.encode(page.last().createdAt, page.last().smartLink.id) else null
-
-        return PageResult(items = page.map { it.smartLink }, nextCursor = nextCursor)
+        return jdbc.query(sql, rowMapper, *params.toTypedArray())
+            .toPageResult(limit, { it.createdAt }, { it.smartLink.id }, { it.smartLink })
     }
 }
