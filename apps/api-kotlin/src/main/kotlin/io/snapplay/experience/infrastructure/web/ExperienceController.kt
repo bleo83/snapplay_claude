@@ -22,7 +22,6 @@ import java.time.Instant
 data class CreateExperienceRequest(
     @field:Size(min = 3, max = 160) val name: String,
     @field:Size(min = 2, max = 160) val contextTitle: String,
-    @field:Size(min = 2, max = 80) val channel: String,
     val handoffMode: HandoffMode,
     @field:Min(0) @field:Max(100) val productCount: Int,
     val startsAt: Instant,

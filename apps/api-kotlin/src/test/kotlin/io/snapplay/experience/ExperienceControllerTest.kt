@@ -42,7 +42,6 @@ class ExperienceControllerTest {
                     {
                       "name": "Test Night",
                       "contextTitle": "Toy Story",
-                      "channel": "Disney+",
                       "handoffMode": "STORE_DEEPLINK",
                       "productCount": 2,
                       "startsAt": "2026-09-01T00:00:00Z",
@@ -68,7 +67,6 @@ class ExperienceControllerTest {
                     {
                       "name": "AB",
                       "contextTitle": "Toy Story",
-                      "channel": "Disney+",
                       "handoffMode": "STORE_DEEPLINK",
                       "productCount": 2,
                       "startsAt": "2026-09-01T00:00:00Z"
@@ -90,7 +88,6 @@ class ExperienceControllerTest {
                     {
                       "name": "Test Night",
                       "contextTitle": "Toy Story",
-                      "channel": "Disney+",
                       "handoffMode": "STORE_DEEPLINK",
                       "productCount": 101,
                       "startsAt": "2026-09-01T00:00:00Z"
@@ -118,7 +115,6 @@ class ExperienceControllerTest {
                     {
                       "name": "New Experience",
                       "contextTitle": "Toy Story",
-                      "channel": "Disney+",
                       "handoffMode": "CART_HANDOFF",
                       "productCount": 0,
                       "startsAt": "2026-11-01T00:00:00Z"
