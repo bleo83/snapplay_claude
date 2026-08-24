@@ -1,5 +1,9 @@
-package io.snapplay.catalog
+package io.snapplay.catalog.infrastructure.persistence
 
+import io.snapplay.catalog.application.port.output.CatalogRepository
+import io.snapplay.catalog.application.port.output.ProductFilters
+import io.snapplay.catalog.domain.CatalogProduct
+import io.snapplay.catalog.domain.ProductStatus
 import io.snapplay.common.Cursor
 import io.snapplay.common.PageResult
 import io.snapplay.common.toPageResult
@@ -31,7 +35,7 @@ class JdbcCatalogRepository(
                         providerProductId = rs.getString("provider_product_id"),
                         name = rs.getString("name"),
                         description = rs.getString("description"),
-                        imageUrl = rs.getString("image_url") ?: "https://placehold.co/640x480?text=Producto",
+                        imageUrl = rs.getString("image_url") ?: "https://placehold.co/640x480?text=Produto",
                         brand = rs.getString("brand"),
                         categories =
                             (rs.getArray("categories")?.array as? Array<*>)

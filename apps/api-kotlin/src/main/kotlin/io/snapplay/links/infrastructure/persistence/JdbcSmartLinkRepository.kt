@@ -22,7 +22,10 @@ class JdbcSmartLinkRepository(
     private val jdbc: JdbcTemplate,
     private val props: SnapPlayProperties,
 ) : SmartLinkRepository {
-    private data class SmartLinkRow(val smartLink: SmartLink, val createdAt: Instant)
+    private data class SmartLinkRow(
+        val smartLink: SmartLink,
+        val createdAt: Instant,
+    )
 
     private val rowMapper =
         RowMapper { rs: ResultSet, _ ->
@@ -83,7 +86,8 @@ class JdbcSmartLinkRepository(
                 add(limit + 1)
             }
 
-        return jdbc.query(sql, rowMapper, *params.toTypedArray())
+        return jdbc
+            .query(sql, rowMapper, *params.toTypedArray())
             .toPageResult(limit, { it.createdAt }, { it.smartLink.id }, { it.smartLink })
     }
 }

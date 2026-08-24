@@ -91,7 +91,8 @@ class JdbcExperienceRepository(
                 add(limit + 1)
             }
 
-        return jdbc.query(sql, { rs, _ -> mapRow(rs) }, *params.toTypedArray())
+        return jdbc
+            .query(sql, { rs, _ -> mapRow(rs) }, *params.toTypedArray())
             .toPageResult(limit, { it.createdAt }, { it.experience.id }, { it.experience })
     }
 

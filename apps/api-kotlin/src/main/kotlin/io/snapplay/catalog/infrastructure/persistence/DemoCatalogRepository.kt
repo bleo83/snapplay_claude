@@ -1,5 +1,9 @@
-package io.snapplay.catalog
+package io.snapplay.catalog.infrastructure.persistence
 
+import io.snapplay.catalog.application.port.output.CatalogRepository
+import io.snapplay.catalog.application.port.output.ProductFilters
+import io.snapplay.catalog.domain.CatalogProduct
+import io.snapplay.catalog.domain.ProductStatus
 import io.snapplay.common.PageResult
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Repository

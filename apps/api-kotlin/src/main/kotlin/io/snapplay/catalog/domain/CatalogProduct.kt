@@ -1,4 +1,4 @@
-package io.snapplay.catalog
+package io.snapplay.catalog.domain
 
 import java.util.UUID
 

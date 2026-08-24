@@ -1,4 +1,4 @@
-package io.snapplay.organization
+package io.snapplay.organization.domain
 
 import java.util.UUID
 

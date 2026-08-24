@@ -1,8 +1,10 @@
-package io.snapplay.organization
+package io.snapplay.organization.infrastructure.web
 
-import io.snapplay.common.NotFoundException
-import io.snapplay.identity.OrgRole
 import io.snapplay.identity.PrincipalResolver
+import io.snapplay.organization.application.port.input.GetOrganizationUseCase
+import io.snapplay.organization.application.port.input.UpdateOrganizationUseCase
+import io.snapplay.organization.application.port.output.UpdateOrganizationInput
+import io.snapplay.organization.domain.OrganizationProfile
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
@@ -24,23 +26,18 @@ data class UpdateOrganizationRequest(
 @RequestMapping("/v1/organization")
 class OrganizationController(
     private val principalResolver: PrincipalResolver,
-    private val organizationRepository: OrganizationRepository,
+    private val getOrganizationUseCase: GetOrganizationUseCase,
+    private val updateOrganizationUseCase: UpdateOrganizationUseCase,
 ) {
     @GetMapping
-    fun get(): OrganizationProfile {
-        val principal = principalResolver.resolve()
-        return organizationRepository.findById(principal.organizationId)
-            ?: throw NotFoundException("Organization not found")
-    }
+    fun get(): OrganizationProfile = getOrganizationUseCase.get(principalResolver.resolve())
 
     @PatchMapping
     fun update(
         @Valid @RequestBody request: UpdateOrganizationRequest,
-    ): OrganizationProfile {
-        val principal = principalResolver.resolve()
-        principal.requireAnyRole(OrgRole.ORGANIZATION_ADMIN)
-        return organizationRepository.update(
-            principal.organizationId,
+    ): OrganizationProfile =
+        updateOrganizationUseCase.update(
+            principalResolver.resolve(),
             UpdateOrganizationInput(
                 legalName = request.legalName,
                 displayName = request.displayName,
@@ -49,5 +46,4 @@ class OrganizationController(
                 timezone = request.timezone,
             ),
         )
-    }
 }

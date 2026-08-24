@@ -23,6 +23,8 @@ spring:
 logging:
   level:
     io.snapplay: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level [%X{requestId}] %logger{36} - %msg%n"
 
 snapplay:
   demo: false

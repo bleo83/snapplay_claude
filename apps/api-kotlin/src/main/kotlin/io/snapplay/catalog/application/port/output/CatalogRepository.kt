@@ -1,5 +1,7 @@
-package io.snapplay.catalog
+package io.snapplay.catalog.application.port.output
 
+import io.snapplay.catalog.domain.CatalogProduct
+import io.snapplay.catalog.domain.ProductStatus
 import io.snapplay.common.PageResult
 import java.util.UUID
 
