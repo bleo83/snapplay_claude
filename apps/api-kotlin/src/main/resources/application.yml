@@ -1,0 +1,32 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: snapplay-api
+  datasource:
+    url: ${SNAPPLAY_DB_URL:jdbc:postgresql://localhost:5432/snapplay}
+    username: ${SNAPPLAY_DB_USER:snapplay}
+    password: ${SNAPPLAY_DB_PASSWORD:snapplay}
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 5000
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${SNAPPLAY_SUPABASE_JWKS_URI:}
+
+logging:
+  level:
+    io.snapplay: INFO
+
+snapplay:
+  demo: false
+  public-base-url: ${SNAPPLAY_PUBLIC_BASE_URL:http://localhost:8080}
+  backoffice-url: ${SNAPPLAY_BACKOFFICE_URL:http://localhost:3000}
+  allowed-origins: ${SNAPPLAY_ALLOWED_ORIGINS:http://localhost:3000}
+  rappi-webhook-secret: ${RAPPI_WEBHOOK_SECRET:}
