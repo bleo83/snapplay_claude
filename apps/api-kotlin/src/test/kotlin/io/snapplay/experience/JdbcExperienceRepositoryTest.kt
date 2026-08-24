@@ -5,7 +5,6 @@ import io.snapplay.experience.application.port.output.ExperienceRepository
 import io.snapplay.experience.domain.ExperienceStatus
 import io.snapplay.experience.domain.HandoffMode
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty
@@ -47,6 +46,7 @@ class JdbcExperienceRepositoryTest {
     lateinit var jdbc: JdbcTemplate
 
     private lateinit var orgId: UUID
+    private lateinit var commerceOrgId: UUID
     private lateinit var channelId: UUID
     private lateinit var contextId: UUID
     private lateinit var connectionId: UUID
@@ -68,7 +68,7 @@ class JdbcExperienceRepositoryTest {
         ).forEach { jdbc.execute(it) }
 
         orgId = UUID.randomUUID()
-        val commerceOrgId = UUID.randomUUID()
+        commerceOrgId = UUID.randomUUID()
         channelId = UUID.randomUUID()
         contextId = UUID.randomUUID()
         val policyId = UUID.randomUUID()
@@ -114,6 +114,49 @@ class JdbcExperienceRepositoryTest {
         )
     }
 
+    // --- findContentContext ---
+
+    @Test
+    fun `findContentContext returns result for known context title`() {
+        val result = repository.findContentContext(orgId, "Toy Story")
+        assertThat(result).isNotNull
+        assertThat(result!!.id).isEqualTo(contextId)
+        assertThat(result.channelDisplayName).isEqualTo("Disney+")
+    }
+
+    @Test
+    fun `findContentContext returns null for unknown context title`() {
+        assertThat(repository.findContentContext(orgId, "Unknown Movie")).isNull()
+    }
+
+    // --- findActiveConnectionId ---
+
+    @Test
+    fun `findActiveConnectionId returns connection id when active`() {
+        assertThat(repository.findActiveConnectionId(orgId)).isEqualTo(connectionId)
+    }
+
+    @Test
+    fun `findActiveConnectionId returns null when no active connection`() {
+        jdbc.update("UPDATE connections SET status = 'INACTIVE' WHERE id = ?", connectionId)
+        assertThat(repository.findActiveConnectionId(orgId)).isNull()
+    }
+
+    // --- findActiveContractId ---
+
+    @Test
+    fun `findActiveContractId returns contract id when active`() {
+        assertThat(repository.findActiveContractId(orgId)).isEqualTo(contractId)
+    }
+
+    @Test
+    fun `findActiveContractId returns null when no active contract`() {
+        jdbc.update("UPDATE commercial_contracts SET status = 'EXPIRED' WHERE id = ?", contractId)
+        assertThat(repository.findActiveContractId(orgId)).isNull()
+    }
+
+    // --- findAll / create ---
+
     @Test
     fun `findAll returns empty list when no experiences exist`() {
         assertThat(repository.findAll(orgId)).isEmpty()
@@ -121,15 +164,7 @@ class JdbcExperienceRepositoryTest {
 
     @Test
     fun `create inserts experience and version, returns domain object`() {
-        val input =
-            CreateExperienceInput(
-                name = "Toy Story Night",
-                contextTitle = "Toy Story",
-                handoffMode = HandoffMode.STORE_DEEPLINK,
-                productCount = 0,
-                startsAt = Instant.parse("2026-09-01T00:00:00Z"),
-                endsAt = null,
-            )
+        val input = buildInput()
 
         val created = repository.create(orgId, UUID.randomUUID(), input)
 
@@ -144,11 +179,7 @@ class JdbcExperienceRepositoryTest {
 
     @Test
     fun `findAll returns created experience with correct joins`() {
-        repository.create(
-            orgId,
-            UUID.randomUUID(),
-            CreateExperienceInput("Night", "Toy Story", HandoffMode.STORE_DEEPLINK, 0, Instant.now(), null),
-        )
+        repository.create(orgId, UUID.randomUUID(), buildInput())
 
         val experiences = repository.findAll(orgId)
         assertThat(experiences).hasSize(1)
@@ -156,38 +187,17 @@ class JdbcExperienceRepositoryTest {
         assertThat(experiences.first().channel).isEqualTo("Disney+")
     }
 
-    @Test
-    fun `create throws ValidationException for unknown contextTitle`() {
-        val input =
-            CreateExperienceInput(
-                name = "Bad Night",
-                contextTitle = "Unknown Movie",
-                handoffMode = HandoffMode.STORE_DEEPLINK,
-                productCount = 0,
-                startsAt = Instant.now(),
-                endsAt = null,
-            )
-
-        assertThatThrownBy { repository.create(orgId, UUID.randomUUID(), input) }
-            .hasMessageContaining("Unknown content context")
-    }
-
-    @Test
-    fun `create is transactional — no partial writes on failure`() {
-        val countBefore = jdbc.queryForObject("SELECT COUNT(*) FROM experiences", Int::class.java)!!
-
-        // Force failure: no active contract (delete it)
-        jdbc.update("UPDATE commercial_contracts SET status = 'EXPIRED' WHERE id = ?", contractId)
-
-        assertThatThrownBy {
-            repository.create(
-                orgId,
-                UUID.randomUUID(),
-                CreateExperienceInput("Night", "Toy Story", HandoffMode.STORE_DEEPLINK, 0, Instant.now(), null),
-            )
-        }
-
-        val countAfter = jdbc.queryForObject("SELECT COUNT(*) FROM experiences", Int::class.java)!!
-        assertThat(countAfter).isEqualTo(countBefore)
-    }
+    private fun buildInput() =
+        CreateExperienceInput(
+            name = "Toy Story Night",
+            contextId = contextId,
+            contextTitle = "Toy Story",
+            channelDisplayName = "Disney+",
+            connectionId = connectionId,
+            contractId = contractId,
+            productIds = emptyList(),
+            handoffMode = HandoffMode.STORE_DEEPLINK,
+            startsAt = Instant.parse("2026-09-01T00:00:00Z"),
+            endsAt = null,
+        )
 }

@@ -1,5 +1,6 @@
 package io.snapplay.experience.infrastructure.persistence
 
+import io.snapplay.experience.application.port.output.ContentContextResult
 import io.snapplay.experience.application.port.output.CreateExperienceInput
 import io.snapplay.experience.application.port.output.ExperienceRepository
 import io.snapplay.experience.domain.Experience
@@ -70,6 +71,25 @@ class DemoExperienceRepository : ExperienceRepository {
 
     override fun findAll(organizationId: UUID): List<Experience> = experiences.toList()
 
+    // Demo always resolves to the Disney+ channel regardless of contextTitle
+    override fun findContentContext(
+        organizationId: UUID,
+        contextTitle: String,
+    ): ContentContextResult =
+        ContentContextResult(
+            id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
+            channelDisplayName = "Disney+",
+        )
+
+    override fun findActiveConnectionId(organizationId: UUID): UUID = UUID.fromString("00000000-0000-0000-0000-000000000002")
+
+    override fun findActiveContractId(organizationId: UUID): UUID = UUID.fromString("00000000-0000-0000-0000-000000000003")
+
+    override fun findActiveProductIds(
+        connectionId: UUID,
+        limit: Int,
+    ): List<UUID> = emptyList()
+
     override fun create(
         organizationId: UUID,
         actorId: UUID,
@@ -80,12 +100,11 @@ class DemoExperienceRepository : ExperienceRepository {
                 id = UUID.randomUUID(),
                 name = input.name,
                 contextTitle = input.contextTitle,
-                // Demo always uses Disney+ as the channel
-                channel = "Disney+",
+                channel = input.channelDisplayName,
                 version = 1,
                 status = ExperienceStatus.DRAFT,
                 handoffMode = input.handoffMode,
-                productCount = input.productCount,
+                productCount = input.productIds.size,
                 startsAt = input.startsAt,
                 endsAt = input.endsAt,
             )
