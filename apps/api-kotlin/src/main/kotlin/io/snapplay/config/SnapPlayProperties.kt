@@ -1,0 +1,12 @@
+package io.snapplay.config
+
+import org.springframework.boot.context.properties.ConfigurationProperties
+
+@ConfigurationProperties(prefix = "snapplay")
+data class SnapPlayProperties(
+    val demo: Boolean = false,
+    val publicBaseUrl: String = "http://localhost:8080",
+    val backofficeUrl: String = "http://localhost:3000",
+    val allowedOrigins: String = "http://localhost:3000",
+    val rappiWebhookSecret: String = "",
+)

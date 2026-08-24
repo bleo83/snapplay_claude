@@ -1,0 +1,13 @@
+# Gradle build output
+build/
+.gradle/
+
+# Keep the Gradle wrapper jar (intentional)
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store

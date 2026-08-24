@@ -20,6 +20,7 @@ supabase/.branches/
 # local tooling
 .DS_Store
 *.log
+.idea/
 
 # generated
 apps/backoffice/src/lib/database.types.ts
