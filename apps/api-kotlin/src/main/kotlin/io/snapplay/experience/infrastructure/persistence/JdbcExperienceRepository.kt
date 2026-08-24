@@ -1,6 +1,6 @@
 package io.snapplay.experience.infrastructure.persistence
 
-import io.snapplay.common.ValidationException
+import io.snapplay.experience.application.port.output.ContentContextResult
 import io.snapplay.experience.application.port.output.CreateExperienceInput
 import io.snapplay.experience.application.port.output.ExperienceRepository
 import io.snapplay.experience.domain.Experience
@@ -59,65 +59,60 @@ class JdbcExperienceRepository(
             organizationId,
         )
 
+    override fun findContentContext(
+        organizationId: UUID,
+        contextTitle: String,
+    ): ContentContextResult? =
+        jdbc
+            .query(
+                """
+                SELECT cc.id, ch.display_name AS channel_display_name
+                FROM content_contexts cc
+                JOIN channels ch ON ch.id = cc.channel_id
+                WHERE cc.organization_id = ?
+                  AND cc.title = ?
+                LIMIT 1
+                """.trimIndent(),
+                { rs, _ -> ContentContextResult(UUID.fromString(rs.getString("id")), rs.getString("channel_display_name")) },
+                organizationId,
+                contextTitle,
+            ).firstOrNull()
+
+    override fun findActiveConnectionId(organizationId: UUID): UUID? =
+        jdbc
+            .query(
+                "SELECT id FROM connections WHERE content_organization_id = ? AND status = 'ACTIVE' LIMIT 1",
+                { rs, _ -> UUID.fromString(rs.getString("id")) },
+                organizationId,
+            ).firstOrNull()
+
+    override fun findActiveContractId(organizationId: UUID): UUID? =
+        jdbc
+            .query(
+                "SELECT id FROM commercial_contracts WHERE publisher_organization_id = ? AND status = 'ACTIVE' LIMIT 1",
+                { rs, _ -> UUID.fromString(rs.getString("id")) },
+                organizationId,
+            ).firstOrNull()
+
+    override fun findActiveProductIds(
+        connectionId: UUID,
+        limit: Int,
+    ): List<UUID> =
+        jdbc.query(
+            "SELECT id FROM catalog_products WHERE connection_id = ? AND status = 'ACTIVE' LIMIT ?",
+            { rs, _ -> UUID.fromString(rs.getString("id")) },
+            connectionId,
+            limit,
+        )
+
     @Transactional
     override fun create(
         organizationId: UUID,
         actorId: UUID,
         input: CreateExperienceInput,
     ): Experience {
-        // 1. Resolve content context by title (must belong to this org)
-        val context =
-            jdbc
-                .query(
-                    """
-                    SELECT cc.id, ch.display_name AS channel_display_name
-                    FROM content_contexts cc
-                    JOIN channels ch ON ch.id = cc.channel_id
-                    WHERE cc.organization_id = ?
-                      AND cc.title = ?
-                    LIMIT 1
-                    """.trimIndent(),
-                    { rs, _ -> Pair(UUID.fromString(rs.getString("id")), rs.getString("channel_display_name")) },
-                    organizationId,
-                    input.contextTitle,
-                ).firstOrNull() ?: throw ValidationException("Unknown content context: '${input.contextTitle}'")
-
-        val contextId = context.first
-        val channelDisplayName = context.second
-
-        // 2. Active connection for this org
-        val connectionId =
-            jdbc
-                .query(
-                    "SELECT id FROM connections WHERE content_organization_id = ? AND status = 'ACTIVE' LIMIT 1",
-                    { rs, _ -> UUID.fromString(rs.getString("id")) },
-                    organizationId,
-                ).firstOrNull() ?: throw ValidationException("No active commerce connection for this organization")
-
-        // 3. Active commercial contract
-        val contractId =
-            jdbc
-                .query(
-                    "SELECT id FROM commercial_contracts WHERE publisher_organization_id = ? AND status = 'ACTIVE' LIMIT 1",
-                    { rs, _ -> UUID.fromString(rs.getString("id")) },
-                    organizationId,
-                ).firstOrNull() ?: throw ValidationException("No active commercial contract for this organization")
-
-        // 4. Pick product IDs from catalog (up to productCount)
-        val productIds: List<UUID> =
-            if (input.productCount > 0) {
-                jdbc.query(
-                    "SELECT id FROM catalog_products WHERE connection_id = ? AND status = 'ACTIVE' LIMIT ?",
-                    { rs, _ -> UUID.fromString(rs.getString("id")) },
-                    connectionId,
-                    input.productCount,
-                )
-            } else {
-                emptyList()
-            }
-
-        // 5. Insert experience
         val experienceId = UUID.randomUUID()
+
         jdbc.update(
             """
             INSERT INTO experiences
@@ -127,15 +122,14 @@ class JdbcExperienceRepository(
             experienceId,
             organizationId,
             input.name,
-            contextId,
-            connectionId,
-            contractId,
+            input.contextId,
+            input.connectionId,
+            input.contractId,
         )
 
-        // 6. Insert version 1 (DRAFT)
         val productIdArray =
             jdbc.dataSource!!.connection.use { conn ->
-                conn.createArrayOf("uuid", productIds.toTypedArray())
+                conn.createArrayOf("uuid", input.productIds.toTypedArray())
             }
         jdbc.update(
             """
@@ -150,7 +144,6 @@ class JdbcExperienceRepository(
             input.endsAt?.let { Timestamp.from(it) },
         )
 
-        // 7. Audit log
         jdbc.update(
             """
             INSERT INTO audit_log
@@ -167,11 +160,11 @@ class JdbcExperienceRepository(
             id = experienceId,
             name = input.name,
             contextTitle = input.contextTitle,
-            channel = channelDisplayName,
+            channel = input.channelDisplayName,
             version = 1,
             status = ExperienceStatus.DRAFT,
             handoffMode = input.handoffMode,
-            productCount = productIds.size,
+            productCount = input.productIds.size,
             startsAt = input.startsAt,
             endsAt = input.endsAt,
         )
