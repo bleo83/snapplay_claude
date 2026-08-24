@@ -14,75 +14,80 @@ import java.util.concurrent.CopyOnWriteArrayList
 @Repository
 @ConditionalOnProperty(name = ["snapplay.demo"], havingValue = "true")
 class DemoExperienceRepository : ExperienceRepository {
-
-    private val experiences: MutableList<Experience> = CopyOnWriteArrayList(
-        listOf(
-            Experience(
-                id = UUID.fromString("184a63fe-4420-46de-9894-b16110364263"),
-                name = "Toy Story Movie Night",
-                contextTitle = "Toy Story",
-                channel = "Disney+",
-                version = 3,
-                status = ExperienceStatus.PUBLISHED,
-                handoffMode = HandoffMode.DYNAMIC_STOREFRONT,
-                productCount = 4,
-                startsAt = Instant.parse("2026-08-01T00:00:00Z"),
-                endsAt = Instant.parse("2026-12-01T00:00:00Z"),
+    private val experiences: MutableList<Experience> =
+        CopyOnWriteArrayList(
+            listOf(
+                Experience(
+                    id = UUID.fromString("184a63fe-4420-46de-9894-b16110364263"),
+                    name = "Toy Story Movie Night",
+                    contextTitle = "Toy Story",
+                    channel = "Disney+",
+                    version = 3,
+                    status = ExperienceStatus.PUBLISHED,
+                    handoffMode = HandoffMode.DYNAMIC_STOREFRONT,
+                    productCount = 4,
+                    startsAt = Instant.parse("2026-08-01T00:00:00Z"),
+                    endsAt = Instant.parse("2026-12-01T00:00:00Z"),
+                ),
+                Experience(
+                    id = UUID.fromString("7351e94e-a88b-46bd-8f3c-a6df37c13483"),
+                    name = "Moana Family Night",
+                    contextTitle = "Moana",
+                    channel = "Disney+",
+                    version = 2,
+                    status = ExperienceStatus.PUBLISHED,
+                    handoffMode = HandoffMode.DYNAMIC_STOREFRONT,
+                    productCount = 3,
+                    startsAt = Instant.parse("2026-08-10T00:00:00Z"),
+                    endsAt = null,
+                ),
+                Experience(
+                    id = UUID.fromString("1d79abf3-33e1-427c-aeba-c27f607f6f71"),
+                    name = "ESPN Match Night",
+                    contextTitle = "ESPN Live",
+                    channel = "ESPN",
+                    version = 1,
+                    status = ExperienceStatus.IN_REVIEW,
+                    handoffMode = HandoffMode.STORE_DEEPLINK,
+                    productCount = 5,
+                    startsAt = Instant.parse("2026-09-01T00:00:00Z"),
+                    endsAt = null,
+                ),
+                Experience(
+                    id = UUID.fromString("53d116c9-e676-4c49-9a2b-371d0b4d5c1a"),
+                    name = "Hulu Classics",
+                    contextTitle = "Hulu",
+                    channel = "Hulu",
+                    version = 1,
+                    status = ExperienceStatus.DRAFT,
+                    handoffMode = HandoffMode.STORE_DEEPLINK,
+                    productCount = 2,
+                    startsAt = Instant.parse("2026-10-01T00:00:00Z"),
+                    endsAt = null,
+                ),
             ),
-            Experience(
-                id = UUID.fromString("7351e94e-a88b-46bd-8f3c-a6df37c13483"),
-                name = "Moana Family Night",
-                contextTitle = "Moana",
-                channel = "Disney+",
-                version = 2,
-                status = ExperienceStatus.PUBLISHED,
-                handoffMode = HandoffMode.DYNAMIC_STOREFRONT,
-                productCount = 3,
-                startsAt = Instant.parse("2026-08-10T00:00:00Z"),
-                endsAt = null,
-            ),
-            Experience(
-                id = UUID.fromString("1d79abf3-33e1-427c-aeba-c27f607f6f71"),
-                name = "ESPN Match Night",
-                contextTitle = "ESPN Live",
-                channel = "ESPN",
-                version = 1,
-                status = ExperienceStatus.IN_REVIEW,
-                handoffMode = HandoffMode.STORE_DEEPLINK,
-                productCount = 5,
-                startsAt = Instant.parse("2026-09-01T00:00:00Z"),
-                endsAt = null,
-            ),
-            Experience(
-                id = UUID.fromString("53d116c9-e676-4c49-9a2b-371d0b4d5c1a"),
-                name = "Hulu Classics",
-                contextTitle = "Hulu",
-                channel = "Hulu",
-                version = 1,
-                status = ExperienceStatus.DRAFT,
-                handoffMode = HandoffMode.STORE_DEEPLINK,
-                productCount = 2,
-                startsAt = Instant.parse("2026-10-01T00:00:00Z"),
-                endsAt = null,
-            ),
-        ),
-    )
+        )
 
     override fun findAll(organizationId: UUID): List<Experience> = experiences.toList()
 
-    override fun create(organizationId: UUID, actorId: UUID, input: CreateExperienceInput): Experience {
-        val experience = Experience(
-            id = UUID.randomUUID(),
-            name = input.name,
-            contextTitle = input.contextTitle,
-            channel = "Disney+",  // Demo always uses Disney+ as the channel
-            version = 1,
-            status = ExperienceStatus.DRAFT,
-            handoffMode = input.handoffMode,
-            productCount = input.productCount,
-            startsAt = input.startsAt,
-            endsAt = input.endsAt,
-        )
+    override fun create(
+        organizationId: UUID,
+        actorId: UUID,
+        input: CreateExperienceInput,
+    ): Experience {
+        val experience =
+            Experience(
+                id = UUID.randomUUID(),
+                name = input.name,
+                contextTitle = input.contextTitle,
+                channel = "Disney+", // Demo always uses Disney+ as the channel
+                version = 1,
+                status = ExperienceStatus.DRAFT,
+                handoffMode = input.handoffMode,
+                productCount = input.productCount,
+                startsAt = input.startsAt,
+                endsAt = input.endsAt,
+            )
         experiences.add(0, experience)
         return experience
     }

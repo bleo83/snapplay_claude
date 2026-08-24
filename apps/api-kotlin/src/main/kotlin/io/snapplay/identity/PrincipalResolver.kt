@@ -15,8 +15,9 @@ private val DEMO_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001
 private val DEMO_ORG_ID = UUID.fromString("50d2d7eb-c8fd-42df-bbb0-0ea0e2271090")
 
 @Component
-class PrincipalResolver(private val props: SnapPlayProperties) {
-
+class PrincipalResolver(
+    private val props: SnapPlayProperties,
+) {
     private val log = LoggerFactory.getLogger(PrincipalResolver::class.java)
 
     @Autowired(required = false)
@@ -34,37 +35,43 @@ class PrincipalResolver(private val props: SnapPlayProperties) {
     }
 
     private fun resolveFromJwt(): RequestPrincipal {
-        val authentication = SecurityContextHolder.getContext().authentication
-            ?: throw UnauthorizedException("No authentication context found")
+        val authentication =
+            SecurityContextHolder.getContext().authentication
+                ?: throw UnauthorizedException("No authentication context found")
 
-        val jwt = authentication.principal as? Jwt
-            ?: throw UnauthorizedException("Expected JWT principal")
+        val jwt =
+            authentication.principal as? Jwt
+                ?: throw UnauthorizedException("Expected JWT principal")
 
-        val userId = try {
-            UUID.fromString(jwt.subject)
-        } catch (e: IllegalArgumentException) {
-            throw UnauthorizedException("Invalid user ID in JWT subject: ${jwt.subject}")
-        }
+        val userId =
+            try {
+                UUID.fromString(jwt.subject)
+            } catch (e: IllegalArgumentException) {
+                log.error("Could not parse JWT token", e)
+                throw UnauthorizedException("Invalid user ID in JWT subject: ${jwt.subject}")
+            }
 
-        val template = jdbcTemplate
-            ?: throw UnauthorizedException("Database not available")
+        val template =
+            jdbcTemplate
+                ?: throw UnauthorizedException("Database not available")
 
-        val memberships = template.query(
-            """
-            SELECT organization_id, role_key
-            FROM organization_members
-            WHERE user_id = ?
-              AND status = 'ACTIVE'
-            ORDER BY created_at ASC
-            """.trimIndent(),
-            { rs, _ ->
-                Pair(
-                    UUID.fromString(rs.getString("organization_id")),
-                    rs.getString("role_key"),
-                )
-            },
-            userId,
-        )
+        val memberships =
+            template.query(
+                """
+                SELECT organization_id, role_key
+                FROM organization_members
+                WHERE user_id = ?
+                  AND status = 'ACTIVE'
+                ORDER BY created_at ASC
+                """.trimIndent(),
+                { rs, _ ->
+                    Pair(
+                        UUID.fromString(rs.getString("organization_id")),
+                        rs.getString("role_key"),
+                    )
+                },
+                userId,
+            )
 
         if (memberships.isEmpty()) {
             log.warn("No active organization membership found for user {}", userId)
@@ -72,12 +79,12 @@ class PrincipalResolver(private val props: SnapPlayProperties) {
         }
 
         val organizationId = memberships.first().first
-        val roles = memberships
-            .filter { it.first == organizationId }
-            .mapNotNull { (_, roleKey) ->
-                runCatching { OrgRole.valueOf(roleKey) }.getOrNull()
-            }
-            .toSet()
+        val roles =
+            memberships
+                .filter { it.first == organizationId }
+                .mapNotNull { (_, roleKey) ->
+                    runCatching { OrgRole.valueOf(roleKey) }.getOrNull()
+                }.toSet()
 
         return RequestPrincipal(
             userId = userId,

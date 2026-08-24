@@ -9,5 +9,8 @@ data class ProductFilters(
 )
 
 fun interface CatalogRepository {
-    fun findProducts(organizationId: UUID, filters: ProductFilters): List<CatalogProduct>
+    fun findProducts(
+        organizationId: UUID,
+        filters: ProductFilters,
+    ): List<CatalogProduct>
 }

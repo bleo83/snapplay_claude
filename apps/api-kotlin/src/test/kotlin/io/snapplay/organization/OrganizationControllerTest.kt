@@ -14,13 +14,13 @@ import org.springframework.test.web.servlet.patch
 @AutoConfigureMockMvc
 @ActiveProfiles("demo")
 class OrganizationControllerTest {
-
     @Autowired
     lateinit var mockMvc: MockMvc
 
     @Test
     fun `GET organization returns demo organization`() {
-        mockMvc.get("/v1/organization")
+        mockMvc
+            .get("/v1/organization")
             .andExpect {
                 status { isOk() }
                 content { contentType(MediaType.APPLICATION_JSON) }
@@ -36,40 +36,44 @@ class OrganizationControllerTest {
 
     @Test
     fun `PATCH organization updates fields and returns updated profile`() {
-        mockMvc.patch("/v1/organization") {
-            contentType = MediaType.APPLICATION_JSON
-            content = """
-                {
-                  "legalName": "Disney Updated S.A.",
-                  "displayName": "Disney Updated",
-                  "country": "AR",
-                  "defaultCurrency": "ARS",
-                  "timezone": "America/Argentina/Buenos_Aires"
-                }
-            """.trimIndent()
-        }.andExpect {
-            status { isOk() }
-            jsonPath("$.legalName") { value("Disney Updated S.A.") }
-            jsonPath("$.displayName") { value("Disney Updated") }
-        }
+        mockMvc
+            .patch("/v1/organization") {
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    """
+                    {
+                      "legalName": "Disney Updated S.A.",
+                      "displayName": "Disney Updated",
+                      "country": "AR",
+                      "defaultCurrency": "ARS",
+                      "timezone": "America/Argentina/Buenos_Aires"
+                    }
+                    """.trimIndent()
+            }.andExpect {
+                status { isOk() }
+                jsonPath("$.legalName") { value("Disney Updated S.A.") }
+                jsonPath("$.displayName") { value("Disney Updated") }
+            }
     }
 
     @Test
     fun `PATCH organization returns 422 for invalid country code`() {
-        mockMvc.patch("/v1/organization") {
-            contentType = MediaType.APPLICATION_JSON
-            content = """
-                {
-                  "legalName": "Disney S.A.",
-                  "displayName": "Disney",
-                  "country": "argentina",
-                  "defaultCurrency": "ARS",
-                  "timezone": "America/Argentina/Buenos_Aires"
-                }
-            """.trimIndent()
-        }.andExpect {
-            status { isUnprocessableEntity() }
-            jsonPath("$.status") { value(422) }
-        }
+        mockMvc
+            .patch("/v1/organization") {
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    """
+                    {
+                      "legalName": "Disney S.A.",
+                      "displayName": "Disney",
+                      "country": "argentina",
+                      "defaultCurrency": "ARS",
+                      "timezone": "America/Argentina/Buenos_Aires"
+                    }
+                    """.trimIndent()
+            }.andExpect {
+                status { isUnprocessableEntity() }
+                jsonPath("$.status") { value(422) }
+            }
     }
 }

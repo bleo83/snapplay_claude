@@ -10,7 +10,5 @@ import org.springframework.stereotype.Service
 class ListSmartLinksUseCaseImpl(
     private val smartLinkRepository: SmartLinkRepository,
 ) : ListSmartLinksUseCase {
-
-    override fun list(principal: RequestPrincipal): List<SmartLink> =
-        smartLinkRepository.findAll(principal.organizationId)
+    override fun list(principal: RequestPrincipal): List<SmartLink> = smartLinkRepository.findAll(principal.organizationId)
 }

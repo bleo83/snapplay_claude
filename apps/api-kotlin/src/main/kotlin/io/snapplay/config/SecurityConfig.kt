@@ -1,5 +1,6 @@
 package io.snapplay.config
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -15,10 +16,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 @EnableWebSecurity
 class SecurityConfig(
     private val props: SnapPlayProperties,
-    @org.springframework.beans.factory.annotation.Value("\${spring.security.oauth2.resourceserver.jwt.jwk-set-uri:}")
+    @param:Value("\${spring.security.oauth2.resourceserver.jwt.jwk-set-uri:}")
     private val jwksUri: String,
 ) {
-
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val config = CorsConfiguration()
@@ -53,9 +53,12 @@ class SecurityConfig(
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
-                    .requestMatchers("/health").permitAll()
-                    .requestMatchers("/r/**").permitAll()
-                    .requestMatchers("/v1/partner/events").permitAll()
+                    .requestMatchers("/health")
+                    .permitAll()
+                    .requestMatchers("/r/**")
+                    .permitAll()
+                    .requestMatchers("/v1/partner/events")
+                    .permitAll()
                 if (jwksUri.isNotBlank()) {
                     auth.requestMatchers("/v1/**").authenticated()
                 } else {

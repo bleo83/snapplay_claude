@@ -13,8 +13,10 @@ import org.springframework.stereotype.Service
 class CreateExperienceUseCaseImpl(
     private val experienceRepository: ExperienceRepository,
 ) : CreateExperienceUseCase {
-
-    override fun create(command: CreateExperienceCommand, principal: RequestPrincipal): Experience {
+    override fun create(
+        command: CreateExperienceCommand,
+        principal: RequestPrincipal,
+    ): Experience {
         principal.requireAnyRole(OrgRole.ORGANIZATION_ADMIN, OrgRole.CONTENT_MANAGER, OrgRole.PUBLISHER)
         return experienceRepository.create(
             principal.organizationId,

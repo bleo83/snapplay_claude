@@ -7,7 +7,9 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-data class SmartLinkListResponse(val items: List<SmartLink>)
+data class SmartLinkListResponse(
+    val items: List<SmartLink>,
+)
 
 @RestController
 @RequestMapping("/v1/smart-links")
@@ -15,7 +17,6 @@ class SmartLinkController(
     private val principalResolver: PrincipalResolver,
     private val listSmartLinksUseCase: ListSmartLinksUseCase,
 ) {
-
     @GetMapping
     fun list(): SmartLinkListResponse {
         val principal = principalResolver.resolve()

@@ -13,13 +13,13 @@ import org.springframework.test.web.servlet.get
 @AutoConfigureMockMvc
 @ActiveProfiles("demo")
 class SmartLinkControllerTest {
-
     @Autowired
     lateinit var mockMvc: MockMvc
 
     @Test
     fun `GET smart-links returns all 2 demo smart links`() {
-        mockMvc.get("/v1/smart-links")
+        mockMvc
+            .get("/v1/smart-links")
             .andExpect {
                 status { isOk() }
                 content { contentType(MediaType.APPLICATION_JSON) }
@@ -35,7 +35,8 @@ class SmartLinkControllerTest {
 
     @Test
     fun `GET smart-links returns url with correct base`() {
-        mockMvc.get("/v1/smart-links")
+        mockMvc
+            .get("/v1/smart-links")
             .andExpect {
                 status { isOk() }
                 jsonPath("$.items[0].url") { isString() }

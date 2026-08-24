@@ -21,7 +21,6 @@ class CatalogController(
     private val catalogRepository: CatalogRepository,
     private val props: SnapPlayProperties,
 ) {
-
     @GetMapping("/products")
     fun products(
         @RequestParam q: String?,
@@ -29,15 +28,17 @@ class CatalogController(
         @RequestParam status: String?,
     ): ProductListResponse {
         val principal = principalResolver.resolve()
-        val filters = ProductFilters(
-            q = q?.takeIf { it.isNotBlank() },
-            category = category?.takeIf { it.isNotBlank() },
-            status = status?.let {
-                runCatching { ProductStatus.valueOf(it) }.getOrElse {
-                    throw ValidationException("Invalid status '$status'. Must be ACTIVE or INACTIVE")
-                }
-            },
-        )
+        val filters =
+            ProductFilters(
+                q = q?.takeIf { it.isNotBlank() },
+                category = category?.takeIf { it.isNotBlank() },
+                status =
+                    status?.let {
+                        runCatching { ProductStatus.valueOf(it) }.getOrElse {
+                            throw ValidationException("Invalid status '$status'. Must be ACTIVE or INACTIVE")
+                        }
+                    },
+            )
         val items = catalogRepository.findProducts(principal.organizationId, filters)
         return ProductListResponse(
             items = items,

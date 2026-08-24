@@ -16,5 +16,10 @@ data class CreateExperienceInput(
 
 interface ExperienceRepository {
     fun findAll(organizationId: UUID): List<Experience>
-    fun create(organizationId: UUID, actorId: UUID, input: CreateExperienceInput): Experience
+
+    fun create(
+        organizationId: UUID,
+        actorId: UUID,
+        input: CreateExperienceInput,
+    ): Experience
 }

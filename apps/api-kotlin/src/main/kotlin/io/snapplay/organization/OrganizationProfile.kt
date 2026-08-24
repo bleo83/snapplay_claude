@@ -3,11 +3,18 @@ package io.snapplay.organization
 import java.util.UUID
 
 enum class OrganizationType {
-    CONTENT_PROVIDER, COMMERCE_PROVIDER, ORCHESTRATOR, BRAND, MERCHANT
+    CONTENT_PROVIDER,
+    COMMERCE_PROVIDER,
+    ORCHESTRATOR,
+    BRAND,
+    MERCHANT,
 }
 
 enum class OrganizationStatus {
-    PENDING, ACTIVE, SUSPENDED, CLOSED
+    PENDING,
+    ACTIVE,
+    SUSPENDED,
+    CLOSED,
 }
 
 data class OrganizationProfile(
