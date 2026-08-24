@@ -80,7 +80,8 @@ class DemoExperienceRepository : ExperienceRepository {
                 id = UUID.randomUUID(),
                 name = input.name,
                 contextTitle = input.contextTitle,
-                channel = "Disney+", // Demo always uses Disney+ as the channel
+                // Demo always uses Disney+ as the channel
+                channel = "Disney+",
                 version = 1,
                 status = ExperienceStatus.DRAFT,
                 handoffMode = input.handoffMode,

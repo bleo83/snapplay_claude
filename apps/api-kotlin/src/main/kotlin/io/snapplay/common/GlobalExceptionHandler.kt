@@ -13,8 +13,7 @@ import java.util.UUID
 class GlobalExceptionHandler {
     private val log = LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
 
-    private fun requestId(request: HttpServletRequest): String =
-        (request.getAttribute("snapplay.requestId") as? String) ?: UUID.randomUUID().toString()
+    private fun requestId(request: HttpServletRequest): String = (request.getAttribute("snapplay.requestId") as? String) ?: UUID.randomUUID().toString()
 
     @ExceptionHandler(NotFoundException::class)
     fun handleNotFound(
