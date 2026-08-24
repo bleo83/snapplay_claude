@@ -9,4 +9,5 @@ data class SnapPlayProperties(
     val backofficeUrl: String = "http://localhost:3000",
     val allowedOrigins: String = "http://localhost:3000",
     val rappiWebhookSecret: String = "",
+    val idempotencyTtlHours: Long = 24,
 )
