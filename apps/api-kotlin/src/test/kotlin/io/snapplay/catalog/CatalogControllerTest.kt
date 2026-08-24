@@ -13,13 +13,13 @@ import org.springframework.test.web.servlet.get
 @AutoConfigureMockMvc
 @ActiveProfiles("demo")
 class CatalogControllerTest {
-
     @Autowired
     lateinit var mockMvc: MockMvc
 
     @Test
     fun `GET products returns all 6 demo products`() {
-        mockMvc.get("/v1/catalog/products")
+        mockMvc
+            .get("/v1/catalog/products")
             .andExpect {
                 status { isOk() }
                 content { contentType(MediaType.APPLICATION_JSON) }
@@ -33,7 +33,8 @@ class CatalogControllerTest {
 
     @Test
     fun `GET products filters by category`() {
-        mockMvc.get("/v1/catalog/products?category=movie-night")
+        mockMvc
+            .get("/v1/catalog/products?category=movie-night")
             .andExpect {
                 status { isOk() }
                 // Toy Story cup + Pochoclos = 2
@@ -43,7 +44,8 @@ class CatalogControllerTest {
 
     @Test
     fun `GET products filters by text query`() {
-        mockMvc.get("/v1/catalog/products?q=vaso")
+        mockMvc
+            .get("/v1/catalog/products?q=vaso")
             .andExpect {
                 status { isOk() }
                 // Vaso coleccionable Toy Story + Vaso Moana = 2
@@ -53,7 +55,8 @@ class CatalogControllerTest {
 
     @Test
     fun `GET products filters by status`() {
-        mockMvc.get("/v1/catalog/products?status=ACTIVE")
+        mockMvc
+            .get("/v1/catalog/products?status=ACTIVE")
             .andExpect {
                 status { isOk() }
                 jsonPath("$.total") { value(6) }
@@ -62,7 +65,8 @@ class CatalogControllerTest {
 
     @Test
     fun `GET products returns 422 for unknown status value`() {
-        mockMvc.get("/v1/catalog/products?status=UNKNOWN")
+        mockMvc
+            .get("/v1/catalog/products?status=UNKNOWN")
             .andExpect {
                 status { isUnprocessableEntity() }
                 jsonPath("$.status") { value(422) }

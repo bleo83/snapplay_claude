@@ -1,0 +1,9 @@
+build/
+.gradle/
+.idea/
+*.md
+docs/
+docker-compose.yml
+.env
+.env.*
+!.env.example

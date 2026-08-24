@@ -9,7 +9,6 @@ import java.util.UUID
 
 @Component
 class RequestIdFilter : OncePerRequestFilter() {
-
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,

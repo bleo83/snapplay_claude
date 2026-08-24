@@ -11,14 +11,16 @@ import java.util.UUID
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
-
     private val log = LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
 
     private fun requestId(request: HttpServletRequest): String =
         (request.getAttribute("snapplay.requestId") as? String) ?: UUID.randomUUID().toString()
 
     @ExceptionHandler(NotFoundException::class)
-    fun handleNotFound(ex: NotFoundException, request: HttpServletRequest): ResponseEntity<ProblemDetails> {
+    fun handleNotFound(
+        ex: NotFoundException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ProblemDetails> {
         log.debug("Not found: {}", ex.message)
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
             ProblemDetails(
@@ -27,12 +29,15 @@ class GlobalExceptionHandler {
                 status = 404,
                 detail = ex.message ?: "Resource not found",
                 requestId = requestId(request),
-            )
+            ),
         )
     }
 
     @ExceptionHandler(ForbiddenException::class)
-    fun handleForbidden(ex: ForbiddenException, request: HttpServletRequest): ResponseEntity<ProblemDetails> {
+    fun handleForbidden(
+        ex: ForbiddenException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ProblemDetails> {
         log.debug("Forbidden: {}", ex.message)
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
             ProblemDetails(
@@ -41,12 +46,15 @@ class GlobalExceptionHandler {
                 status = 403,
                 detail = ex.message ?: "Access denied",
                 requestId = requestId(request),
-            )
+            ),
         )
     }
 
     @ExceptionHandler(UnauthorizedException::class)
-    fun handleUnauthorized(ex: UnauthorizedException, request: HttpServletRequest): ResponseEntity<ProblemDetails> {
+    fun handleUnauthorized(
+        ex: UnauthorizedException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ProblemDetails> {
         log.debug("Unauthorized: {}", ex.message)
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
             ProblemDetails(
@@ -55,12 +63,15 @@ class GlobalExceptionHandler {
                 status = 401,
                 detail = ex.message ?: "Authentication required",
                 requestId = requestId(request),
-            )
+            ),
         )
     }
 
     @ExceptionHandler(ValidationException::class)
-    fun handleValidation(ex: ValidationException, request: HttpServletRequest): ResponseEntity<ProblemDetails> {
+    fun handleValidation(
+        ex: ValidationException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ProblemDetails> {
         log.debug("Validation error: {}", ex.message)
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(
             ProblemDetails(
@@ -70,12 +81,15 @@ class GlobalExceptionHandler {
                 detail = ex.message ?: "Validation failed",
                 requestId = requestId(request),
                 errors = ex.errors.ifEmpty { null },
-            )
+            ),
         )
     }
 
     @ExceptionHandler(InvalidTransitionException::class)
-    fun handleInvalidTransition(ex: InvalidTransitionException, request: HttpServletRequest): ResponseEntity<ProblemDetails> {
+    fun handleInvalidTransition(
+        ex: InvalidTransitionException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ProblemDetails> {
         log.debug("Invalid transition: {}", ex.message)
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(
             ProblemDetails(
@@ -84,7 +98,7 @@ class GlobalExceptionHandler {
                 status = 422,
                 detail = ex.message ?: "Invalid state transition",
                 requestId = requestId(request),
-            )
+            ),
         )
     }
 
@@ -93,13 +107,14 @@ class GlobalExceptionHandler {
         ex: MethodArgumentNotValidException,
         request: HttpServletRequest,
     ): ResponseEntity<ProblemDetails> {
-        val errors = ex.bindingResult.fieldErrors.map { fieldError ->
-            mapOf(
-                "field" to fieldError.field,
-                "message" to (fieldError.defaultMessage ?: "Invalid value"),
-                "rejected_value" to fieldError.rejectedValue,
-            )
-        }
+        val errors =
+            ex.bindingResult.fieldErrors.map { fieldError ->
+                mapOf(
+                    "field" to fieldError.field,
+                    "message" to (fieldError.defaultMessage ?: "Invalid value"),
+                    "rejected_value" to fieldError.rejectedValue,
+                )
+            }
         log.debug("Method argument not valid: {} field errors", errors.size)
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(
             ProblemDetails(
@@ -109,12 +124,15 @@ class GlobalExceptionHandler {
                 detail = "Request validation failed",
                 requestId = requestId(request),
                 errors = errors,
-            )
+            ),
         )
     }
 
     @ExceptionHandler(Exception::class)
-    fun handleGeneric(ex: Exception, request: HttpServletRequest): ResponseEntity<ProblemDetails> {
+    fun handleGeneric(
+        ex: Exception,
+        request: HttpServletRequest,
+    ): ResponseEntity<ProblemDetails> {
         log.error("Unhandled exception", ex)
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
             ProblemDetails(
@@ -123,7 +141,7 @@ class GlobalExceptionHandler {
                 status = 500,
                 detail = "An unexpected error occurred",
                 requestId = requestId(request),
-            )
+            ),
         )
     }
 }

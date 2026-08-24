@@ -22,7 +22,6 @@ import java.util.UUID
 @Testcontainers
 @EnabledIfSystemProperty(named = "testcontainers.enabled", matches = "true")
 class JdbcSmartLinkRepositoryTest {
-
     companion object {
         @Container
         @JvmStatic
@@ -69,15 +68,20 @@ class JdbcSmartLinkRepositoryTest {
         )
         jdbc.update(
             "INSERT INTO channels (id, organization_id, channel_key, display_name) VALUES (?, ?, 'disney_plus', 'Disney+')",
-            channelId, orgId,
+            channelId,
+            orgId,
         )
         jdbc.update(
             "INSERT INTO content_contexts (id, organization_id, channel_id, external_ref, context_type, title) VALUES (?, ?, ?, 'toy_story', 'MOVIE', 'Toy Story')",
-            contextId, orgId, channelId,
+            contextId,
+            orgId,
+            channelId,
         )
         jdbc.update(
             "INSERT INTO experiences (id, organization_id, content_context_id, name, status, handoff_mode) VALUES (?, ?, ?, 'Toy Story Night', 'PUBLISHED', 'STORE_DEEPLINK')",
-            experienceId, orgId, contextId,
+            experienceId,
+            orgId,
+            contextId,
         )
     }
 
@@ -91,7 +95,9 @@ class JdbcSmartLinkRepositoryTest {
         val smartLinkId = UUID.randomUUID()
         jdbc.update(
             "INSERT INTO smart_links (id, organization_id, experience_id, short_code, placement_key, status) VALUES (?, ?, ?, 'ABC123', 'disney-plus.toy-story.endcard', 'ACTIVE')",
-            smartLinkId, orgId, experienceId,
+            smartLinkId,
+            orgId,
+            experienceId,
         )
 
         val links = repository.findAll(orgId)
@@ -111,7 +117,9 @@ class JdbcSmartLinkRepositoryTest {
         val smartLinkId = UUID.randomUUID()
         jdbc.update(
             "INSERT INTO smart_links (id, organization_id, experience_id, short_code, placement_key, status) VALUES (?, ?, ?, 'XYZ789', 'disney-plus.toy-story.pause', 'ACTIVE')",
-            smartLinkId, orgId, experienceId,
+            smartLinkId,
+            orgId,
+            experienceId,
         )
         // 3 scans, 1 converted
         repeat(3) {
@@ -119,7 +127,9 @@ class JdbcSmartLinkRepositoryTest {
             val status = if (it == 0) "CONVERTED" else "INITIATED"
             jdbc.update(
                 "INSERT INTO handoff_sessions (id, smart_link_id, status) VALUES (?, ?, ?)",
-                sessionId, smartLinkId, status,
+                sessionId,
+                smartLinkId,
+                status,
             )
         }
 
@@ -138,7 +148,9 @@ class JdbcSmartLinkRepositoryTest {
         )
         jdbc.update(
             "INSERT INTO smart_links (id, organization_id, experience_id, short_code, placement_key, status) VALUES (?, ?, ?, 'OTHER1', 'some.placement', 'ACTIVE')",
-            UUID.randomUUID(), otherOrgId, experienceId,
+            UUID.randomUUID(),
+            otherOrgId,
+            experienceId,
         )
 
         assertThat(repository.findAll(orgId)).isEmpty()

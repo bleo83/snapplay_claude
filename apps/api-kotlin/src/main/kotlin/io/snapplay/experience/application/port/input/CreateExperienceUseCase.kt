@@ -14,6 +14,9 @@ data class CreateExperienceCommand(
     val endsAt: Instant?,
 )
 
-interface CreateExperienceUseCase {
-    fun create(command: CreateExperienceCommand, principal: RequestPrincipal): Experience
+fun interface CreateExperienceUseCase {
+    fun create(
+        command: CreateExperienceCommand,
+        principal: RequestPrincipal,
+    ): Experience
 }

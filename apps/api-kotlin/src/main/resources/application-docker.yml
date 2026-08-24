@@ -1,0 +1,15 @@
+# Local Docker Compose profile — loaded via SPRING_PROFILES_ACTIVE=docker
+# Excludes OAuth2 auto-config so the app starts without a JWKS URI.
+# docker-compose.yml sets SNAPPLAY_DEMO=true (env var overrides this file)
+# which activates the demo security chain (permit all) and demo principal.
+#
+# To run with a real DB and real JWT:
+#   SNAPPLAY_DEMO=false SNAPPLAY_SUPABASE_JWKS_URI=https://... docker compose up
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
+
+logging:
+  level:
+    io.snapplay: DEBUG

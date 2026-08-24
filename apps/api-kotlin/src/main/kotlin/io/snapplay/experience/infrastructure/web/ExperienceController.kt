@@ -29,7 +29,9 @@ data class CreateExperienceRequest(
     val endsAt: Instant? = null,
 )
 
-data class ExperienceListResponse(val items: List<Experience>)
+data class ExperienceListResponse(
+    val items: List<Experience>,
+)
 
 @RestController
 @RequestMapping("/v1/experiences")
@@ -38,7 +40,6 @@ class ExperienceController(
     private val listExperiencesUseCase: ListExperiencesUseCase,
     private val createExperienceUseCase: CreateExperienceUseCase,
 ) {
-
     @GetMapping
     fun list(): ExperienceListResponse {
         val principal = principalResolver.resolve()
@@ -47,7 +48,9 @@ class ExperienceController(
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    fun create(@Valid @RequestBody request: CreateExperienceRequest): Experience {
+    fun create(
+        @Valid @RequestBody request: CreateExperienceRequest,
+    ): Experience {
         val principal = principalResolver.resolve()
         return createExperienceUseCase.create(
             CreateExperienceCommand(

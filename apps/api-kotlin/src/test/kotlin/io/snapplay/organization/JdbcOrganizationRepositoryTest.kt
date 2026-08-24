@@ -24,7 +24,6 @@ import java.util.UUID
 @Testcontainers
 @EnabledIfSystemProperty(named = "testcontainers.enabled", matches = "true")
 class JdbcOrganizationRepositoryTest {
-
     companion object {
         @Container
         @JvmStatic
@@ -84,13 +83,14 @@ class JdbcOrganizationRepositoryTest {
 
     @Test
     fun `update changes mutable fields and returns fresh state`() {
-        val input = UpdateOrganizationInput(
-            legalName = "Disney Updated S.A.",
-            displayName = "Disney Updated",
-            country = "MX",
-            defaultCurrency = "MXN",
-            timezone = "America/Mexico_City",
-        )
+        val input =
+            UpdateOrganizationInput(
+                legalName = "Disney Updated S.A.",
+                displayName = "Disney Updated",
+                country = "MX",
+                defaultCurrency = "MXN",
+                timezone = "America/Mexico_City",
+            )
 
         val updated = repository.update(orgId, input)
 

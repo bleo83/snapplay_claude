@@ -12,7 +12,6 @@ import org.springframework.test.context.ActiveProfiles
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ActiveProfiles("demo")
 class HealthControllerTest {
-
     @Autowired
     lateinit var restTemplate: TestRestTemplate
 

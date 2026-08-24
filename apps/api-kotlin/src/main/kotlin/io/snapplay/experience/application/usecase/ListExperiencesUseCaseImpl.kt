@@ -10,7 +10,5 @@ import org.springframework.stereotype.Service
 class ListExperiencesUseCaseImpl(
     private val experienceRepository: ExperienceRepository,
 ) : ListExperiencesUseCase {
-
-    override fun list(principal: RequestPrincipal): List<Experience> =
-        experienceRepository.findAll(principal.organizationId)
+    override fun list(principal: RequestPrincipal): List<Experience> = experienceRepository.findAll(principal.organizationId)
 }

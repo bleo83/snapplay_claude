@@ -12,5 +12,9 @@ data class UpdateOrganizationInput(
 
 interface OrganizationRepository {
     fun findById(organizationId: UUID): OrganizationProfile?
-    fun update(organizationId: UUID, input: UpdateOrganizationInput): OrganizationProfile
+
+    fun update(
+        organizationId: UUID,
+        input: UpdateOrganizationInput,
+    ): OrganizationProfile
 }

@@ -4,7 +4,13 @@ import io.snapplay.common.ForbiddenException
 import java.util.UUID
 
 enum class OrgRole {
-    ORGANIZATION_ADMIN, CONTENT_MANAGER, PUBLISHER, CATALOG_VIEWER, ANALYST, FINANCE, AUDITOR
+    ORGANIZATION_ADMIN,
+    CONTENT_MANAGER,
+    PUBLISHER,
+    CATALOG_VIEWER,
+    ANALYST,
+    FINANCE,
+    AUDITOR,
 }
 
 data class RequestPrincipal(

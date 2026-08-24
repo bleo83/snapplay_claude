@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: snapplay
+      POSTGRES_USER: snapplay
+      POSTGRES_PASSWORD: snapplay
+    ports:
+      - "5433:5432"  # host:container — avoids conflict with a local PostgreSQL on 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U snapplay -d snapplay"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SNAPPLAY_DEMO: "true"
+      SNAPPLAY_DB_URL: jdbc:postgresql://postgres:5432/snapplay
+      SNAPPLAY_DB_USER: snapplay
+      SNAPPLAY_DB_PASSWORD: snapplay
+      SNAPPLAY_PUBLIC_BASE_URL: http://localhost:8080
+      SNAPPLAY_BACKOFFICE_URL: http://localhost:3000
+      SNAPPLAY_ALLOWED_ORIGINS: http://localhost:3000
+      RAPPI_WEBHOOK_SECRET: local-dev-secret-replace-in-production
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

@@ -20,7 +20,6 @@ import java.util.UUID
 @Testcontainers
 @EnabledIfSystemProperty(named = "testcontainers.enabled", matches = "true")
 class JdbcCatalogRepositoryTest {
-
     companion object {
         @Container
         @JvmStatic
@@ -66,11 +65,15 @@ class JdbcCatalogRepositoryTest {
         )
         jdbc.update(
             "INSERT INTO data_sharing_policies (id, owner_organization_id, name, mode) VALUES (?, ?, 'default', 'BILLING_ONLY')",
-            policyId, orgId,
+            policyId,
+            orgId,
         )
         jdbc.update(
             "INSERT INTO connections (id, name, content_organization_id, commerce_organization_id, connector_key, environment, territories, capabilities, data_sharing_policy_id) VALUES (?, 'Disney x Rappi', ?, ?, 'rappi', 'SANDBOX', '{AR}', '{}', ?)",
-            connectionId, orgId, commerceOrgId, policyId,
+            connectionId,
+            orgId,
+            commerceOrgId,
+            policyId,
         )
 
         // Insert 3 test products
@@ -93,9 +96,13 @@ class JdbcCatalogRepositoryTest {
                 (connection_id, provider_product_id, name, categories, age_restricted, reference_price_minor, currency, status)
             VALUES (?, ?, ?, ?, ?, ?, 'ARS', ?)
             """.trimIndent(),
-            connectionId, sku, name,
+            connectionId,
+            sku,
+            name,
             jdbc.dataSource!!.connection.createArrayOf("text", categories.toTypedArray()),
-            ageRestricted, priceMinor, status,
+            ageRestricted,
+            priceMinor,
+            status,
         )
     }
 

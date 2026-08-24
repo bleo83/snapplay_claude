@@ -26,7 +26,6 @@ class OrganizationController(
     private val principalResolver: PrincipalResolver,
     private val organizationRepository: OrganizationRepository,
 ) {
-
     @GetMapping
     fun get(): OrganizationProfile {
         val principal = principalResolver.resolve()
@@ -35,7 +34,9 @@ class OrganizationController(
     }
 
     @PatchMapping
-    fun update(@Valid @RequestBody request: UpdateOrganizationRequest): OrganizationProfile {
+    fun update(
+        @Valid @RequestBody request: UpdateOrganizationRequest,
+    ): OrganizationProfile {
         val principal = principalResolver.resolve()
         principal.requireAnyRole(OrgRole.ORGANIZATION_ADMIN)
         return organizationRepository.update(

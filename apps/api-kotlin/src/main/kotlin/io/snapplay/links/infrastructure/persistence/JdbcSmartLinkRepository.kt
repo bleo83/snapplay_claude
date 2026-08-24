@@ -17,20 +17,20 @@ class JdbcSmartLinkRepository(
     private val jdbc: JdbcTemplate,
     private val props: SnapPlayProperties,
 ) : SmartLinkRepository {
-
-    private val rowMapper = RowMapper { rs: ResultSet, _ ->
-        val shortCode = rs.getString("short_code")
-        SmartLink(
-            id = UUID.fromString(rs.getString("id")),
-            shortCode = shortCode,
-            url = "${props.publicBaseUrl}/r/$shortCode",
-            experienceName = rs.getString("experience_name"),
-            placementKey = rs.getString("placement_key"),
-            status = SmartLinkStatus.valueOf(rs.getString("status")),
-            scans = rs.getInt("scans"),
-            conversions = rs.getInt("conversions"),
-        )
-    }
+    private val rowMapper =
+        RowMapper { rs: ResultSet, _ ->
+            val shortCode = rs.getString("short_code")
+            SmartLink(
+                id = UUID.fromString(rs.getString("id")),
+                shortCode = shortCode,
+                url = "${props.publicBaseUrl}/r/$shortCode",
+                experienceName = rs.getString("experience_name"),
+                placementKey = rs.getString("placement_key"),
+                status = SmartLinkStatus.valueOf(rs.getString("status")),
+                scans = rs.getInt("scans"),
+                conversions = rs.getInt("conversions"),
+            )
+        }
 
     override fun findAll(organizationId: UUID): List<SmartLink> =
         jdbc.query(
