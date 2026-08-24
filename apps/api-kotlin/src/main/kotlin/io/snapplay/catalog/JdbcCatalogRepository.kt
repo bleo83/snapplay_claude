@@ -48,6 +48,7 @@ class JdbcCatalogRepository(
             )
         }
 
+    @Suppress("CognitiveComplexMethod") // 4 optional filters × 2 blocks (SQL + params) is inherent to this query builder
     override fun findProducts(
         organizationId: UUID,
         filters: ProductFilters,
@@ -72,6 +73,7 @@ class JdbcCatalogRepository(
                     """.trimIndent(),
                 )
                 if (filters.status != null) append("\nAND cp.status = ?")
+                @Suppress("USELESS_IS_CHECK") // false positive: category is String? per ProductFilters
                 if (filters.category != null) append("\nAND ? = ANY(cp.categories)")
                 if (filters.q != null) append("\nAND (cp.name ILIKE ? OR cp.description ILIKE ?)")
                 if (decoded != null) {
@@ -86,6 +88,7 @@ class JdbcCatalogRepository(
                 add(organizationId)
                 add(organizationId)
                 if (filters.status != null) add(filters.status.name)
+                @Suppress("USELESS_IS_CHECK") // false positive: category is String? per ProductFilters
                 if (filters.category != null) add(filters.category)
                 if (filters.q != null) {
                     val like = "%${filters.q}%"
@@ -100,6 +103,8 @@ class JdbcCatalogRepository(
                 add(limit + 1)
             }
 
+        // sql is built exclusively from static string literals; all dynamic values use ? params — no injection risk
+        @Suppress("SqlSourceToSinkFlow")
         return jdbc
             .query(sql, rowMapper, *params.toTypedArray())
             .toPageResult(limit, { it.createdAt }, { it.product.id }, { it.product })
