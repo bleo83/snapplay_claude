@@ -1,6 +1,7 @@
 package io.snapplay.organization.infrastructure.persistence
 
 import io.snapplay.common.NotFoundException
+import io.snapplay.organization.application.port.output.CreateOrganizationInput
 import io.snapplay.organization.application.port.output.OrganizationRepository
 import io.snapplay.organization.application.port.output.UpdateOrganizationInput
 import io.snapplay.organization.domain.OrganizationProfile
@@ -44,6 +45,25 @@ class JdbcOrganizationRepository(
                 rowMapper,
                 organizationId,
             ).firstOrNull()
+
+    override fun create(input: CreateOrganizationInput): OrganizationProfile {
+        val id = UUID.randomUUID()
+        jdbc.update(
+            """
+            INSERT INTO organizations
+                (id, legal_name, display_name, organization_type, country, default_currency, timezone, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING')
+            """.trimIndent(),
+            id,
+            input.legalName,
+            input.displayName,
+            input.organizationType.name,
+            input.country,
+            input.defaultCurrency,
+            input.timezone,
+        )
+        return findById(id)!!
+    }
 
     override fun update(
         organizationId: UUID,
