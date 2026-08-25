@@ -9,6 +9,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
+import org.springframework.test.web.servlet.post
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -53,6 +54,50 @@ class OrganizationControllerTest {
                 status { isOk() }
                 jsonPath("$.legalName") { value("Disney Updated S.A.") }
                 jsonPath("$.displayName") { value("Disney Updated") }
+            }
+    }
+
+    @Test
+    fun `POST organizations returns 403 when caller is not ORCHESTRATOR`() {
+        // Demo org is CONTENT_PROVIDER — only ORCHESTRATOR orgs may create new ones
+        mockMvc
+            .post("/v1/organizations") {
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    """
+                    {
+                      "legalName": "New Partner S.A.",
+                      "displayName": "New Partner",
+                      "organizationType": "COMMERCE_PROVIDER",
+                      "country": "AR",
+                      "defaultCurrency": "ARS",
+                      "timezone": "America/Argentina/Buenos_Aires"
+                    }
+                    """.trimIndent()
+            }.andExpect {
+                status { isForbidden() }
+            }
+    }
+
+    @Test
+    fun `POST organizations returns 422 for invalid country code`() {
+        mockMvc
+            .post("/v1/organizations") {
+                contentType = MediaType.APPLICATION_JSON
+                content =
+                    """
+                    {
+                      "legalName": "New Partner S.A.",
+                      "displayName": "New Partner",
+                      "organizationType": "COMMERCE_PROVIDER",
+                      "country": "argentina",
+                      "defaultCurrency": "ARS",
+                      "timezone": "America/Argentina/Buenos_Aires"
+                    }
+                    """.trimIndent()
+            }.andExpect {
+                status { isUnprocessableEntity() }
+                jsonPath("$.status") { value(422) }
             }
     }
 

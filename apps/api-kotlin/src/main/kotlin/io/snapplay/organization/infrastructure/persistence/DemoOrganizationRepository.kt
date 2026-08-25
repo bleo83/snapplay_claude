@@ -1,5 +1,6 @@
 package io.snapplay.organization.infrastructure.persistence
 
+import io.snapplay.organization.application.port.output.CreateOrganizationInput
 import io.snapplay.organization.application.port.output.OrganizationRepository
 import io.snapplay.organization.application.port.output.UpdateOrganizationInput
 import io.snapplay.organization.domain.OrganizationProfile
@@ -28,8 +29,26 @@ class DemoOrganizationRepository : OrganizationRepository {
 
     // Mutable copy for PATCH support in demo mode
     private var current = org
+    private val created = mutableListOf<OrganizationProfile>()
 
-    override fun findById(organizationId: UUID): OrganizationProfile = current
+    override fun findById(organizationId: UUID): OrganizationProfile =
+        if (organizationId == current.id) current else created.firstOrNull { it.id == organizationId } ?: current
+
+    override fun create(input: CreateOrganizationInput): OrganizationProfile {
+        val newOrg =
+            OrganizationProfile(
+                id = UUID.randomUUID(),
+                legalName = input.legalName,
+                displayName = input.displayName,
+                organizationType = input.organizationType,
+                country = input.country,
+                defaultCurrency = input.defaultCurrency,
+                timezone = input.timezone,
+                status = OrganizationStatus.PENDING,
+            )
+        created.add(newOrg)
+        return newOrg
+    }
 
     override fun update(
         organizationId: UUID,
