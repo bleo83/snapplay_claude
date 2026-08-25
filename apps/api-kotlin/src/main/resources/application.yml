@@ -32,3 +32,9 @@ snapplay:
   backoffice-url: ${SNAPPLAY_BACKOFFICE_URL:http://localhost:3000}
   allowed-origins: ${SNAPPLAY_ALLOWED_ORIGINS:http://localhost:3000}
   rappi-webhook-secret: ${RAPPI_WEBHOOK_SECRET:}
+
+springdoc:
+  api-docs:
+    path: /api/openapi.json
+  swagger-ui:
+    path: /api/swagger-ui.html
