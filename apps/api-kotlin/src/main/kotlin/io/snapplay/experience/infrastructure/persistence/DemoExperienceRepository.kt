@@ -92,6 +92,11 @@ class DemoExperienceRepository : ExperienceRepository {
         cursor: String?,
     ): PageResult<Experience> = PageResult(items = experiences.take(limit), nextCursor = null)
 
+    override fun findById(
+        organizationId: UUID,
+        id: UUID,
+    ): Experience? = experiences.firstOrNull { it.id == id }
+
     // Demo always resolves to the Disney+ channel regardless of contextTitle
     override fun findContentContext(
         organizationId: UUID,
@@ -132,5 +137,55 @@ class DemoExperienceRepository : ExperienceRepository {
             )
         experiences.add(0, experience)
         return experience
+    }
+
+    override fun publish(
+        organizationId: UUID,
+        actorId: UUID,
+        id: UUID,
+    ): Experience {
+        val idx = experiences.indexOfFirst { it.id == id }
+        val updated = experiences[idx].copy(status = ExperienceStatus.PUBLISHED)
+        experiences[idx] = updated
+        return updated
+    }
+
+    override fun pause(
+        organizationId: UUID,
+        actorId: UUID,
+        id: UUID,
+    ): Experience {
+        val idx = experiences.indexOfFirst { it.id == id }
+        val updated = experiences[idx].copy(status = ExperienceStatus.PAUSED)
+        experiences[idx] = updated
+        return updated
+    }
+
+    override fun retire(
+        organizationId: UUID,
+        actorId: UUID,
+        id: UUID,
+    ): Experience {
+        val idx = experiences.indexOfFirst { it.id == id }
+        val updated = experiences[idx].copy(status = ExperienceStatus.RETIRED)
+        experiences[idx] = updated
+        return updated
+    }
+
+    override fun clone(
+        organizationId: UUID,
+        actorId: UUID,
+        id: UUID,
+    ): Experience {
+        val source = experiences.first { it.id == id }
+        val cloned =
+            source.copy(
+                id = UUID.randomUUID(),
+                name = "Copy of ${source.name}",
+                version = 1,
+                status = ExperienceStatus.DRAFT,
+            )
+        experiences.add(0, cloned)
+        return cloned
     }
 }

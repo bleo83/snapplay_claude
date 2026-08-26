@@ -69,6 +69,22 @@ class JdbcExperienceRepository(
         )
     }
 
+    private val baseSelectSql =
+        """
+        SELECT e.id, e.name, e.status, e.current_version, e.created_at, e.connection_id,
+               cc.title        AS context_title,
+               ch.display_name AS channel_display_name,
+               ev.handoff_mode, ev.product_ids,
+               ev.store_selection, ev.eligibility,
+               ev.effective_from, ev.effective_to
+        FROM experiences e
+        JOIN content_contexts cc ON cc.id = e.content_context_id
+        JOIN channels         ch ON ch.id = cc.channel_id
+        LEFT JOIN experience_versions ev
+               ON ev.experience_id = e.id
+              AND ev.version = e.current_version
+        """.trimIndent()
+
     override fun findAll(
         organizationId: UUID,
         limit: Int,
@@ -80,23 +96,8 @@ class JdbcExperienceRepository(
         @Suppress("SqlSourceToSinkFlow")
         val sql =
             buildString {
-                append(
-                    """
-                    SELECT e.id, e.name, e.status, e.current_version, e.created_at, e.connection_id,
-                           cc.title        AS context_title,
-                           ch.display_name AS channel_display_name,
-                           ev.handoff_mode, ev.product_ids,
-                           ev.store_selection, ev.eligibility,
-                           ev.effective_from, ev.effective_to
-                    FROM experiences e
-                    JOIN content_contexts cc ON cc.id = e.content_context_id
-                    JOIN channels         ch ON ch.id = cc.channel_id
-                    LEFT JOIN experience_versions ev
-                           ON ev.experience_id = e.id
-                          AND ev.version = e.current_version
-                    WHERE e.organization_id = ?
-                    """.trimIndent(),
-                )
+                append(baseSelectSql)
+                append("\nWHERE e.organization_id = ?")
                 if (decoded != null) {
                     append("\nAND (e.created_at < ? OR (e.created_at = ? AND e.id < ?::uuid))")
                 }
@@ -119,6 +120,19 @@ class JdbcExperienceRepository(
             .query(sql, { rs, _ -> mapRow(rs) }, *params.toTypedArray())
             .toPageResult(limit, { it.createdAt }, { it.experience.id }, { it.experience })
     }
+
+    override fun findById(
+        organizationId: UUID,
+        id: UUID,
+    ): Experience? =
+        jdbc
+            .query(
+                "$baseSelectSql\nWHERE e.organization_id = ? AND e.id = ?",
+                { rs, _ -> mapRow(rs) },
+                organizationId,
+                id,
+            ).firstOrNull()
+            ?.experience
 
     override fun findContentContext(
         organizationId: UUID,
@@ -245,5 +259,143 @@ class JdbcExperienceRepository(
             startsAt = input.startsAt,
             endsAt = input.endsAt,
         )
+    }
+
+    @Transactional
+    override fun publish(
+        organizationId: UUID,
+        actorId: UUID,
+        id: UUID,
+    ): Experience {
+        jdbc.update(
+            "UPDATE experiences SET status = 'PUBLISHED', updated_at = now() WHERE id = ? AND organization_id = ?",
+            id,
+            organizationId,
+        )
+        jdbc.update(
+            """
+            UPDATE experience_versions SET status = 'PUBLISHED'
+            WHERE experience_id = ?
+              AND version = (SELECT current_version FROM experiences WHERE id = ?)
+            """.trimIndent(),
+            id,
+            id,
+        )
+        jdbc.update(
+            """
+            INSERT INTO audit_log
+                (organization_id, actor_user_id, action, resource_type, resource_id, request_id, after_redacted)
+            VALUES (?, ?, 'experience.published', 'experience', ?, ?, '{"status":"PUBLISHED"}'::jsonb)
+            """.trimIndent(),
+            organizationId,
+            actorId,
+            id.toString(),
+            UUID.randomUUID().toString(),
+        )
+        return findById(organizationId, id)!!
+    }
+
+    @Transactional
+    override fun pause(
+        organizationId: UUID,
+        actorId: UUID,
+        id: UUID,
+    ): Experience {
+        jdbc.update(
+            "UPDATE experiences SET status = 'PAUSED', updated_at = now() WHERE id = ? AND organization_id = ?",
+            id,
+            organizationId,
+        )
+        jdbc.update(
+            """
+            INSERT INTO audit_log
+                (organization_id, actor_user_id, action, resource_type, resource_id, request_id, after_redacted)
+            VALUES (?, ?, 'experience.paused', 'experience', ?, ?, '{"status":"PAUSED"}'::jsonb)
+            """.trimIndent(),
+            organizationId,
+            actorId,
+            id.toString(),
+            UUID.randomUUID().toString(),
+        )
+        return findById(organizationId, id)!!
+    }
+
+    @Transactional
+    override fun retire(
+        organizationId: UUID,
+        actorId: UUID,
+        id: UUID,
+    ): Experience {
+        jdbc.update(
+            "UPDATE experiences SET status = 'RETIRED', updated_at = now() WHERE id = ? AND organization_id = ?",
+            id,
+            organizationId,
+        )
+        jdbc.update(
+            """
+            INSERT INTO audit_log
+                (organization_id, actor_user_id, action, resource_type, resource_id, request_id, after_redacted)
+            VALUES (?, ?, 'experience.retired', 'experience', ?, ?, '{"status":"RETIRED"}'::jsonb)
+            """.trimIndent(),
+            organizationId,
+            actorId,
+            id.toString(),
+            UUID.randomUUID().toString(),
+        )
+        return findById(organizationId, id)!!
+    }
+
+    @Transactional
+    override fun clone(
+        organizationId: UUID,
+        actorId: UUID,
+        id: UUID,
+    ): Experience {
+        val source = findById(organizationId, id)!!
+        val newId = UUID.randomUUID()
+        val cloneName = "Copy of ${source.name}"
+
+        // Copy the experiences row
+        jdbc.update(
+            """
+            INSERT INTO experiences
+                (id, organization_id, name, content_context_id, connection_id, contract_id, status, current_version)
+            SELECT ?, organization_id, ?, content_context_id, connection_id, contract_id, 'DRAFT', 1
+            FROM experiences WHERE id = ?
+            """.trimIndent(),
+            newId,
+            cloneName,
+            id,
+        )
+
+        // Copy the current version into version 1 of the new experience
+        jdbc.update(
+            """
+            INSERT INTO experience_versions
+                (experience_id, version, status, handoff_mode, product_ids, store_selection, eligibility, presentation, effective_from, effective_to)
+            SELECT ?, 1, 'DRAFT', handoff_mode, product_ids, store_selection, eligibility, presentation, effective_from, effective_to
+            FROM experience_versions
+            WHERE experience_id = ?
+              AND version = (SELECT current_version FROM experiences WHERE id = ?)
+            """.trimIndent(),
+            newId,
+            id,
+            id,
+        )
+
+        jdbc.update(
+            """
+            INSERT INTO audit_log
+                (organization_id, actor_user_id, action, resource_type, resource_id, request_id, after_redacted)
+            VALUES (?, ?, 'experience.cloned', 'experience', ?, ?, ?::jsonb)
+            """.trimIndent(),
+            organizationId,
+            actorId,
+            newId.toString(),
+            UUID.randomUUID().toString(),
+            objectMapper.writeValueAsString(mapOf("clonedFrom" to id.toString(), "status" to "DRAFT")),
+        )
+
+        return findById(organizationId, newId)!!
     }
 }

@@ -34,6 +34,11 @@ interface ExperienceRepository {
         cursor: String?,
     ): PageResult<Experience>
 
+    fun findById(
+        organizationId: UUID,
+        id: UUID,
+    ): Experience?
+
     fun findContentContext(
         organizationId: UUID,
         contextTitle: String,
@@ -50,5 +55,29 @@ interface ExperienceRepository {
         organizationId: UUID,
         actorId: UUID,
         input: CreateExperienceInput,
+    ): Experience
+
+    fun publish(
+        organizationId: UUID,
+        actorId: UUID,
+        id: UUID,
+    ): Experience
+
+    fun pause(
+        organizationId: UUID,
+        actorId: UUID,
+        id: UUID,
+    ): Experience
+
+    fun retire(
+        organizationId: UUID,
+        actorId: UUID,
+        id: UUID,
+    ): Experience
+
+    fun clone(
+        organizationId: UUID,
+        actorId: UUID,
+        id: UUID,
     ): Experience
 }
