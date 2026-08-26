@@ -4,6 +4,7 @@ import io.snapplay.common.PageResult
 import io.snapplay.experience.application.port.output.ContentContextResult
 import io.snapplay.experience.application.port.output.CreateExperienceInput
 import io.snapplay.experience.application.port.output.ExperienceRepository
+import io.snapplay.experience.domain.CommerceDestination
 import io.snapplay.experience.domain.Experience
 import io.snapplay.experience.domain.ExperienceStatus
 import io.snapplay.experience.domain.HandoffMode
@@ -12,6 +13,9 @@ import org.springframework.stereotype.Repository
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
+
+private val DEMO_CONNECTION_ID = UUID.fromString("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+private val DEMO_DESTINATION = CommerceDestination(providerStoreId = "rappi-store-ar-001", providerCategoryId = "snacks-drinks")
 
 @Repository
 @ConditionalOnProperty(name = ["snapplay.demo"], havingValue = "true")
@@ -24,9 +28,12 @@ class DemoExperienceRepository : ExperienceRepository {
                     name = "Toy Story Movie Night",
                     contextTitle = "Toy Story",
                     channel = "Disney+",
+                    connectionId = DEMO_CONNECTION_ID,
+                    territory = "AR",
+                    destination = DEMO_DESTINATION,
                     version = 3,
                     status = ExperienceStatus.PUBLISHED,
-                    handoffMode = HandoffMode.DYNAMIC_STOREFRONT,
+                    handoffMode = HandoffMode.STORE_DEEPLINK,
                     productCount = 4,
                     startsAt = Instant.parse("2026-08-01T00:00:00Z"),
                     endsAt = Instant.parse("2026-12-01T00:00:00Z"),
@@ -36,9 +43,12 @@ class DemoExperienceRepository : ExperienceRepository {
                     name = "Moana Family Night",
                     contextTitle = "Moana",
                     channel = "Disney+",
+                    connectionId = DEMO_CONNECTION_ID,
+                    territory = "AR",
+                    destination = DEMO_DESTINATION,
                     version = 2,
                     status = ExperienceStatus.PUBLISHED,
-                    handoffMode = HandoffMode.DYNAMIC_STOREFRONT,
+                    handoffMode = HandoffMode.STORE_DEEPLINK,
                     productCount = 3,
                     startsAt = Instant.parse("2026-08-10T00:00:00Z"),
                     endsAt = null,
@@ -48,6 +58,9 @@ class DemoExperienceRepository : ExperienceRepository {
                     name = "ESPN Match Night",
                     contextTitle = "ESPN Live",
                     channel = "ESPN",
+                    connectionId = DEMO_CONNECTION_ID,
+                    territory = "AR",
+                    destination = DEMO_DESTINATION,
                     version = 1,
                     status = ExperienceStatus.IN_REVIEW,
                     handoffMode = HandoffMode.STORE_DEEPLINK,
@@ -60,6 +73,9 @@ class DemoExperienceRepository : ExperienceRepository {
                     name = "Hulu Classics",
                     contextTitle = "Hulu",
                     channel = "Hulu",
+                    connectionId = DEMO_CONNECTION_ID,
+                    territory = "AR",
+                    destination = DEMO_DESTINATION,
                     version = 1,
                     status = ExperienceStatus.DRAFT,
                     handoffMode = HandoffMode.STORE_DEEPLINK,
@@ -86,8 +102,6 @@ class DemoExperienceRepository : ExperienceRepository {
             channelDisplayName = "Disney+",
         )
 
-    override fun findActiveConnectionId(organizationId: UUID): UUID = UUID.fromString("00000000-0000-0000-0000-000000000002")
-
     override fun findActiveContractId(organizationId: UUID): UUID = UUID.fromString("00000000-0000-0000-0000-000000000003")
 
     override fun findActiveProductIds(
@@ -106,6 +120,9 @@ class DemoExperienceRepository : ExperienceRepository {
                 name = input.name,
                 contextTitle = input.contextTitle,
                 channel = input.channelDisplayName,
+                connectionId = input.connectionId,
+                territory = input.territory,
+                destination = input.destination,
                 version = 1,
                 status = ExperienceStatus.DRAFT,
                 handoffMode = input.handoffMode,
