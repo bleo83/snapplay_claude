@@ -1,6 +1,7 @@
 package io.snapplay.experience.application.port.output
 
 import io.snapplay.common.PageResult
+import io.snapplay.experience.domain.CommerceDestination
 import io.snapplay.experience.domain.Experience
 import io.snapplay.experience.domain.HandoffMode
 import java.time.Instant
@@ -20,6 +21,8 @@ data class CreateExperienceInput(
     val contractId: UUID,
     val productIds: List<UUID>,
     val handoffMode: HandoffMode,
+    val territory: String,
+    val destination: CommerceDestination,
     val startsAt: Instant,
     val endsAt: Instant?,
 )
@@ -35,8 +38,6 @@ interface ExperienceRepository {
         organizationId: UUID,
         contextTitle: String,
     ): ContentContextResult?
-
-    fun findActiveConnectionId(organizationId: UUID): UUID?
 
     fun findActiveContractId(organizationId: UUID): UUID?
 

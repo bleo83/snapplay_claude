@@ -1,5 +1,6 @@
 package io.snapplay.connection
 
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -17,6 +18,16 @@ import org.springframework.test.web.servlet.post
 class ConnectionControllerTest {
     @Autowired
     lateinit var mockMvc: MockMvc
+
+    // The demo connection is shared across the Spring context — reset its status after each test
+    // so that other test classes (e.g. ExperienceControllerTest) always see it as ACTIVE.
+    @AfterEach
+    fun resetDemoConnectionStatus() {
+        mockMvc.patch("/v1/connections/a1b2c3d4-e5f6-7890-abcd-ef1234567890") {
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"status": "ACTIVE"}"""
+        }
+    }
 
     @Test
     fun `GET connections returns demo Disney-Rappi connection`() {
