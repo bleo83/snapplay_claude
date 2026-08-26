@@ -2,6 +2,7 @@ package io.snapplay.experience
 
 import io.snapplay.experience.application.port.output.CreateExperienceInput
 import io.snapplay.experience.application.port.output.ExperienceRepository
+import io.snapplay.experience.domain.CommerceDestination
 import io.snapplay.experience.domain.ExperienceStatus
 import io.snapplay.experience.domain.HandoffMode
 import org.assertj.core.api.Assertions.assertThat
@@ -100,7 +101,7 @@ class JdbcExperienceRepositoryTest {
             orgId,
         )
         jdbc.update(
-            "INSERT INTO connections (id, name, content_organization_id, commerce_organization_id, connector_key, environment, territories, capabilities, data_sharing_policy_id, status) VALUES (?, 'Disney x Rappi', ?, ?, 'rappi', 'SANDBOX', '{AR}', '{}', ?, 'ACTIVE')",
+            "INSERT INTO connections (id, name, content_organization_id, commerce_organization_id, connector_key, environment, territories, capabilities, data_sharing_policy_id, status) VALUES (?, 'Disney x Rappi', ?, ?, 'rappi', 'SANDBOX', '{AR}', '[]', ?, 'ACTIVE')",
             connectionId,
             orgId,
             commerceOrgId,
@@ -127,19 +128,6 @@ class JdbcExperienceRepositoryTest {
     @Test
     fun `findContentContext returns null for unknown context title`() {
         assertThat(repository.findContentContext(orgId, "Unknown Movie")).isNull()
-    }
-
-    // --- findActiveConnectionId ---
-
-    @Test
-    fun `findActiveConnectionId returns connection id when active`() {
-        assertThat(repository.findActiveConnectionId(orgId)).isEqualTo(connectionId)
-    }
-
-    @Test
-    fun `findActiveConnectionId returns null when no active connection`() {
-        jdbc.update("UPDATE connections SET status = 'INACTIVE' WHERE id = ?", connectionId)
-        assertThat(repository.findActiveConnectionId(orgId)).isNull()
     }
 
     // --- findActiveContractId ---
@@ -175,6 +163,9 @@ class JdbcExperienceRepositoryTest {
         assertThat(created.contextTitle).isEqualTo("Toy Story")
         assertThat(created.channel).isEqualTo("Disney+")
         assertThat(created.productCount).isEqualTo(0)
+        assertThat(created.territory).isEqualTo("AR")
+        assertThat(created.destination.providerStoreId).isEqualTo("rappi-store-001")
+        assertThat(created.destination.providerCategoryId).isEqualTo("snacks")
     }
 
     @Test
@@ -185,6 +176,8 @@ class JdbcExperienceRepositoryTest {
         assertThat(result.items).hasSize(1)
         assertThat(result.items.first().contextTitle).isEqualTo("Toy Story")
         assertThat(result.items.first().channel).isEqualTo("Disney+")
+        assertThat(result.items.first().territory).isEqualTo("AR")
+        assertThat(result.items.first().destination.providerStoreId).isEqualTo("rappi-store-001")
     }
 
     private fun buildInput() =
@@ -197,6 +190,8 @@ class JdbcExperienceRepositoryTest {
             contractId = contractId,
             productIds = emptyList(),
             handoffMode = HandoffMode.STORE_DEEPLINK,
+            territory = "AR",
+            destination = CommerceDestination(providerStoreId = "rappi-store-001", providerCategoryId = "snacks"),
             startsAt = Instant.parse("2026-09-01T00:00:00Z"),
             endsAt = null,
         )

@@ -25,7 +25,7 @@ data class Connection(
     val environment: Environment,
     val status: ConnectionStatus,
     val territories: List<String>,
-    val capabilities: Map<String, Any>,
+    val capabilities: Set<Capability>,
     val dataSharingPolicyId: UUID,
     val createdAt: Instant,
 )

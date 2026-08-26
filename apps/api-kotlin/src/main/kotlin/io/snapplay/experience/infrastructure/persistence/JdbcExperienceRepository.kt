@@ -1,14 +1,18 @@
 package io.snapplay.experience.infrastructure.persistence
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.snapplay.common.Cursor
 import io.snapplay.common.PageResult
 import io.snapplay.common.toPageResult
 import io.snapplay.experience.application.port.output.ContentContextResult
 import io.snapplay.experience.application.port.output.CreateExperienceInput
 import io.snapplay.experience.application.port.output.ExperienceRepository
+import io.snapplay.experience.domain.CommerceDestination
 import io.snapplay.experience.domain.Experience
 import io.snapplay.experience.domain.ExperienceStatus
 import io.snapplay.experience.domain.HandoffMode
+import org.postgresql.util.PGobject
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
@@ -23,6 +27,8 @@ import java.util.UUID
 class JdbcExperienceRepository(
     private val jdbc: JdbcTemplate,
 ) : ExperienceRepository {
+    private val objectMapper = jacksonObjectMapper()
+
     private data class ExperienceRow(
         val experience: Experience,
         val createdAt: Instant,
@@ -30,6 +36,14 @@ class JdbcExperienceRepository(
 
     private fun mapRow(rs: ResultSet): ExperienceRow {
         val productIds = (rs.getArray("product_ids")?.array as? Array<*>) ?: emptyArray<Any>()
+        val storeSelectionJson = rs.getString("store_selection") ?: "{}"
+        val storeSelection: Map<String, String> = objectMapper.readValue(storeSelectionJson)
+        val eligibilityJson = rs.getString("eligibility") ?: "{}"
+        val eligibility: Map<String, Any> = objectMapper.readValue(eligibilityJson)
+
+        @Suppress("UNCHECKED_CAST")
+        val countries = (eligibility["countries"] as? List<String>) ?: emptyList()
+
         return ExperienceRow(
             experience =
                 Experience(
@@ -37,6 +51,13 @@ class JdbcExperienceRepository(
                     name = rs.getString("name"),
                     contextTitle = rs.getString("context_title"),
                     channel = rs.getString("channel_display_name"),
+                    connectionId = UUID.fromString(rs.getString("connection_id")),
+                    territory = countries.firstOrNull() ?: "",
+                    destination =
+                        CommerceDestination(
+                            providerStoreId = storeSelection["provider_store_id"] ?: "",
+                            providerCategoryId = storeSelection["provider_category_id"] ?: "",
+                        ),
                     version = rs.getInt("current_version"),
                     status = ExperienceStatus.valueOf(rs.getString("status")),
                     handoffMode = HandoffMode.valueOf(rs.getString("handoff_mode") ?: "STORE_DEEPLINK"),
@@ -55,14 +76,17 @@ class JdbcExperienceRepository(
     ): PageResult<Experience> {
         val decoded = cursor?.let { Cursor.decode(it) }
 
+        // sql is built exclusively from static string literals; all dynamic values use ? params — no injection risk
+        @Suppress("SqlSourceToSinkFlow")
         val sql =
             buildString {
                 append(
                     """
-                    SELECT e.id, e.name, e.status, e.current_version, e.created_at,
+                    SELECT e.id, e.name, e.status, e.current_version, e.created_at, e.connection_id,
                            cc.title        AS context_title,
                            ch.display_name AS channel_display_name,
                            ev.handoff_mode, ev.product_ids,
+                           ev.store_selection, ev.eligibility,
                            ev.effective_from, ev.effective_to
                     FROM experiences e
                     JOIN content_contexts cc ON cc.id = e.content_context_id
@@ -115,14 +139,6 @@ class JdbcExperienceRepository(
                 contextTitle,
             ).firstOrNull()
 
-    override fun findActiveConnectionId(organizationId: UUID): UUID? =
-        jdbc
-            .query(
-                "SELECT id FROM connections WHERE content_organization_id = ? AND status = 'ACTIVE' LIMIT 1",
-                { rs, _ -> UUID.fromString(rs.getString("id")) },
-                organizationId,
-            ).firstOrNull()
-
     override fun findActiveContractId(organizationId: UUID): UUID? =
         jdbc
             .query(
@@ -168,15 +184,36 @@ class JdbcExperienceRepository(
             jdbc.dataSource!!.connection.use { conn ->
                 conn.createArrayOf("uuid", input.productIds.toTypedArray())
             }
+
+        val storeSelectionPg =
+            PGobject().apply {
+                type = "jsonb"
+                value =
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "provider_store_id" to input.destination.providerStoreId,
+                            "provider_category_id" to input.destination.providerCategoryId,
+                        ),
+                    )
+            }
+
+        val eligibilityPg =
+            PGobject().apply {
+                type = "jsonb"
+                value = objectMapper.writeValueAsString(mapOf("countries" to listOf(input.territory)))
+            }
+
         jdbc.update(
             """
             INSERT INTO experience_versions
-                (experience_id, version, status, handoff_mode, product_ids, eligibility, presentation, effective_from, effective_to)
-            VALUES (?, 1, 'DRAFT', ?, ?, '{"countries":["AR"]}', '{"locale":"es-AR"}', ?, ?)
+                (experience_id, version, status, handoff_mode, product_ids, store_selection, eligibility, presentation, effective_from, effective_to)
+            VALUES (?, 1, 'DRAFT', ?, ?, ?, ?, '{"locale":"es-AR"}'::jsonb, ?, ?)
             """.trimIndent(),
             experienceId,
             input.handoffMode.name,
             productIdArray,
+            storeSelectionPg,
+            eligibilityPg,
             Timestamp.from(input.startsAt),
             input.endsAt?.let { Timestamp.from(it) },
         )
@@ -198,6 +235,9 @@ class JdbcExperienceRepository(
             name = input.name,
             contextTitle = input.contextTitle,
             channel = input.channelDisplayName,
+            connectionId = input.connectionId,
+            territory = input.territory,
+            destination = input.destination,
             version = 1,
             status = ExperienceStatus.DRAFT,
             handoffMode = input.handoffMode,

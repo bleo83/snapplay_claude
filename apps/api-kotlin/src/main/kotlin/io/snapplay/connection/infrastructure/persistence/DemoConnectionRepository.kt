@@ -7,6 +7,7 @@ import io.snapplay.common.toPageResult
 import io.snapplay.connection.application.port.output.ConnectionRepository
 import io.snapplay.connection.application.port.output.CreateConnectionInput
 import io.snapplay.connection.application.port.output.UpdateConnectionInput
+import io.snapplay.connection.domain.Capability
 import io.snapplay.connection.domain.Connection
 import io.snapplay.connection.domain.ConnectionStatus
 import io.snapplay.connection.domain.Environment
@@ -34,7 +35,12 @@ class DemoConnectionRepository : ConnectionRepository {
                 environment = Environment.SANDBOX,
                 status = ConnectionStatus.ACTIVE,
                 territories = listOf("AR"),
-                capabilities = mapOf("catalog_sync" to true, "order_api" to true),
+                capabilities =
+                    setOf(
+                        Capability.STORE_CATEGORY_DEEPLINK,
+                        Capability.CATALOG_SYNC,
+                        Capability.ORDER_WEBHOOK_INGRESS,
+                    ),
                 dataSharingPolicyId = DEMO_POLICY_ID,
                 createdAt = Instant.parse("2026-01-01T00:00:00Z"),
             ),

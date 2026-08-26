@@ -1,12 +1,14 @@
 package io.snapplay.connection.infrastructure.web
 
 import io.snapplay.common.PageResult
+import io.snapplay.common.ValidationException
 import io.snapplay.connection.application.port.input.CreateConnectionCommand
 import io.snapplay.connection.application.port.input.CreateConnectionUseCase
 import io.snapplay.connection.application.port.input.GetConnectionUseCase
 import io.snapplay.connection.application.port.input.ListConnectionsUseCase
 import io.snapplay.connection.application.port.input.UpdateConnectionCommand
 import io.snapplay.connection.application.port.input.UpdateConnectionUseCase
+import io.snapplay.connection.domain.Capability
 import io.snapplay.connection.domain.Connection
 import io.snapplay.connection.domain.ConnectionStatus
 import io.snapplay.connection.domain.Environment
@@ -37,7 +39,7 @@ data class CreateConnectionRequest(
         @Pattern(regexp = "^[A-Z]{2}$", message = "Must be a 2-letter ISO country code")
         String,
         >,
-    val capabilities: Map<String, Any>,
+    val capabilities: List<String>,
     val dataSharingPolicyId: UUID,
 )
 
@@ -46,7 +48,7 @@ data class UpdateConnectionRequest(
         @Pattern(regexp = "^[A-Z]{2}$", message = "Must be a 2-letter ISO country code")
         String,
         >?,
-    val capabilities: Map<String, Any>?,
+    val capabilities: List<String>?,
     val status: ConnectionStatus?,
 )
 
@@ -71,7 +73,7 @@ class ConnectionController(
                 connectorKey = request.connectorKey,
                 environment = request.environment,
                 territories = request.territories,
-                capabilities = request.capabilities,
+                capabilities = parseCapabilities(request.capabilities),
                 dataSharingPolicyId = request.dataSharingPolicyId,
             ),
             principalResolver.resolve(),
@@ -101,10 +103,18 @@ class ConnectionController(
         updateConnectionUseCase.update(
             UpdateConnectionCommand(
                 territories = request.territories,
-                capabilities = request.capabilities,
+                capabilities = request.capabilities?.let { parseCapabilities(it) },
                 status = request.status,
             ),
             principalResolver.resolve(),
             id,
         )
+
+    private fun parseCapabilities(names: List<String>): Set<Capability> =
+        names.mapTo(mutableSetOf()) { name ->
+            Capability.entries.firstOrNull { it.name == name }
+                ?: throw ValidationException(
+                    "Unknown capability: '$name'. Valid values: ${Capability.entries.joinToString { it.name }}",
+                )
+        }
 }

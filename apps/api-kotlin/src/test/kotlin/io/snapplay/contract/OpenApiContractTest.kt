@@ -178,7 +178,7 @@ class OpenApiContractTest {
             .perform(
                 post("/v1/experiences")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"AB","contextTitle":"x","handoffMode":"STORE_DEEPLINK","productCount":0,"startsAt":"2026-09-01T00:00:00Z"}"""),
+                    .content("""{"name":"AB","contextTitle":"x","connectionId":"a1b2c3d4-e5f6-7890-abcd-ef1234567890","territory":"AR","destination":{"providerStoreId":"s","providerCategoryId":"c"},"handoffMode":"STORE_DEEPLINK","productCount":0,"startsAt":"2026-09-01T00:00:00Z"}"""),
             )
             .andExpect(status().isUnprocessableEntity())
             .andExpect(jsonPath("$.status").value(422))
