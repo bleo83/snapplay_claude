@@ -1,6 +1,7 @@
 package io.snapplay.connection.application.port.output
 
 import io.snapplay.common.PageResult
+import io.snapplay.connection.domain.Capability
 import io.snapplay.connection.domain.Connection
 import io.snapplay.connection.domain.ConnectionStatus
 import io.snapplay.connection.domain.Environment
@@ -13,13 +14,13 @@ data class CreateConnectionInput(
     val connectorKey: String,
     val environment: Environment,
     val territories: List<String>,
-    val capabilities: Map<String, Any>,
+    val capabilities: Set<Capability>,
     val dataSharingPolicyId: UUID,
 )
 
 data class UpdateConnectionInput(
     val territories: List<String>?,
-    val capabilities: Map<String, Any>?,
+    val capabilities: Set<Capability>?,
     val status: ConnectionStatus?,
 )
 

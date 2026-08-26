@@ -68,7 +68,7 @@ class ConnectionControllerTest {
                       "connectorKey": "pedidosya",
                       "environment": "SANDBOX",
                       "territories": ["AR", "UY"],
-                      "capabilities": {"catalog_sync": true},
+                      "capabilities": ["CATALOG_SYNC"],
                       "dataSharingPolicyId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
                     }
                     """.trimIndent()
@@ -94,7 +94,7 @@ class ConnectionControllerTest {
                       "connectorKey": "pedidosya",
                       "environment": "SANDBOX",
                       "territories": ["AR"],
-                      "capabilities": {},
+                      "capabilities": [],
                       "dataSharingPolicyId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
                     }
                     """.trimIndent()
@@ -144,7 +144,7 @@ class ConnectionControllerTest {
                       "connectorKey": "rappi",
                       "environment": "PRODUCTION",
                       "territories": ["MX"],
-                      "capabilities": {},
+                      "capabilities": [],
                       "dataSharingPolicyId": "dddddddd-dddd-dddd-dddd-dddddddddddd"
                     }
                     """.trimIndent()

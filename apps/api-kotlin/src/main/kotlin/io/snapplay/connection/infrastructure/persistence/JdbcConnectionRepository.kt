@@ -9,6 +9,7 @@ import io.snapplay.common.toPageResult
 import io.snapplay.connection.application.port.output.ConnectionRepository
 import io.snapplay.connection.application.port.output.CreateConnectionInput
 import io.snapplay.connection.application.port.output.UpdateConnectionInput
+import io.snapplay.connection.domain.Capability
 import io.snapplay.connection.domain.Connection
 import io.snapplay.connection.domain.ConnectionStatus
 import io.snapplay.connection.domain.Environment
@@ -37,8 +38,11 @@ class JdbcConnectionRepository(
                 ?.map { it.toString().trim() }
                 ?: emptyList()
 
-        val capabilitiesJson = rs.getString("capabilities") ?: "{}"
-        val capabilities: Map<String, Any> = objectMapper.readValue(capabilitiesJson)
+        val capabilitiesJson = rs.getString("capabilities") ?: "[]"
+        val capabilities: Set<Capability> =
+            objectMapper
+                .readValue<List<String>>(capabilitiesJson)
+                .mapTo(mutableSetOf()) { Capability.valueOf(it) }
 
         return ConnectionRow(
             connection =
