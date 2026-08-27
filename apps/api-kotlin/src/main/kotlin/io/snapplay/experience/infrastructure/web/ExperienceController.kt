@@ -1,8 +1,12 @@
 package io.snapplay.experience.infrastructure.web
 
+import io.snapplay.experience.application.port.input.CloneExperienceUseCase
 import io.snapplay.experience.application.port.input.CreateExperienceCommand
 import io.snapplay.experience.application.port.input.CreateExperienceUseCase
 import io.snapplay.experience.application.port.input.ListExperiencesUseCase
+import io.snapplay.experience.application.port.input.PauseExperienceUseCase
+import io.snapplay.experience.application.port.input.PublishExperienceUseCase
+import io.snapplay.experience.application.port.input.RetireExperienceUseCase
 import io.snapplay.experience.domain.CommerceDestination
 import io.snapplay.experience.domain.Experience
 import io.snapplay.experience.domain.HandoffMode
@@ -15,6 +19,8 @@ import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -52,6 +58,10 @@ class ExperienceController(
     private val principalResolver: PrincipalResolver,
     private val listExperiencesUseCase: ListExperiencesUseCase,
     private val createExperienceUseCase: CreateExperienceUseCase,
+    private val publishExperienceUseCase: PublishExperienceUseCase,
+    private val pauseExperienceUseCase: PauseExperienceUseCase,
+    private val retireExperienceUseCase: RetireExperienceUseCase,
+    private val cloneExperienceUseCase: CloneExperienceUseCase,
 ) {
     @GetMapping
     fun list(
@@ -89,4 +99,25 @@ class ExperienceController(
             principal,
         )
     }
+
+    @PatchMapping("/{id}/publish")
+    fun publish(
+        @PathVariable id: UUID,
+    ): Experience = publishExperienceUseCase.publish(id, principalResolver.resolve())
+
+    @PatchMapping("/{id}/pause")
+    fun pause(
+        @PathVariable id: UUID,
+    ): Experience = pauseExperienceUseCase.pause(id, principalResolver.resolve())
+
+    @PatchMapping("/{id}/retire")
+    fun retire(
+        @PathVariable id: UUID,
+    ): Experience = retireExperienceUseCase.retire(id, principalResolver.resolve())
+
+    @PostMapping("/{id}/clone")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun clone(
+        @PathVariable id: UUID,
+    ): Experience = cloneExperienceUseCase.clone(id, principalResolver.resolve())
 }

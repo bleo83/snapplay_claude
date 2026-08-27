@@ -74,6 +74,10 @@ class OpenApiContractTest {
         assertThat(paths).contains(
             "/v1/organization",
             "/v1/experiences",
+            "/v1/experiences/{id}/publish",
+            "/v1/experiences/{id}/pause",
+            "/v1/experiences/{id}/retire",
+            "/v1/experiences/{id}/clone",
             "/v1/catalog/products",
             "/health",
         )
