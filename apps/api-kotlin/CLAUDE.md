@@ -64,6 +64,20 @@ Critical mutations (`POST /v1/experiences`, `POST /v1/partner/events`) are prote
 
 To add a new endpoint to idempotency protection, add its path to `IDEMPOTENT_PATHS` in `IdempotencyFilter`.
 
+## Git branches
+
+Branch names follow the pattern `<type>/sna-<id>-<short-slug>`:
+
+| Type | When to use |
+|------|-------------|
+| `feat/` | New feature or capability |
+| `fix/` | Bug fix |
+| `refactor/` | Refactor with no behaviour change |
+
+Examples: `feat/sna-18-publish-workflow`, `fix/sna-42-cursor-overflow`, `refactor/sna-57-hexagonal-migration`
+
+Never use author names or other prefixes.
+
 ## Style
 
 - ktlint enforced via `./gradlew ktlintCheck`. Run `./gradlew ktlintFormat` to auto-fix.
