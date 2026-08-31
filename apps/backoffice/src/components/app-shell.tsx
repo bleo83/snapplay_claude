@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 const navigation = [
   { href: "/", label: "Resumen", icon: ChartNoAxesCombined },
@@ -28,9 +28,30 @@ const navigation = [
   { href: "/connections", label: "Conexiones", icon: PlugZap },
 ];
 
+const isDemoMode = process.env.NEXT_PUBLIC_SNAPPLAY_DEMO_MODE === "true";
+
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isDemoMode) return;
+    // Dynamically import to avoid bundling Supabase on every page
+    import("@/lib/supabase/client").then(({ createClient }) => {
+      createClient()
+        .auth.getUser()
+        .then(({ data }) => {
+          setUserEmail(data.user?.email ?? null);
+        });
+    });
+  }, []);
+
   if (pathname.startsWith("/login")) return children;
+
+  const displayName = isDemoMode
+    ? "Demo User"
+    : (userEmail?.split("@")[0] ?? "…");
+  const displayEmail = isDemoMode ? "Datos demo activos" : (userEmail ?? "…");
 
   return (
     <div className="app-shell">
@@ -76,17 +97,17 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Settings size={18} strokeWidth={1.8} />
             <span>Configuración</span>
           </Link>
-          <div className="demo-badge">
-            <span />{" "}
-            {process.env.NEXT_PUBLIC_SNAPPLAY_DEMO_MODE === "true"
-              ? "Datos demo activos"
-              : "Supabase conectado"}
+          <div className={`demo-badge ${isDemoMode ? "demo" : "live"}`}>
+            <span />
+            {isDemoMode ? "DEMO — datos de prueba" : "PRODUCCIÓN"}
           </div>
           <div className="profile">
-            <span className="profile-avatar">LB</span>
+            <span className="profile-avatar">
+              {displayName.slice(0, 2).toUpperCase()}
+            </span>
             <div>
-              <strong>Leonardo</strong>
-              <small>Organization admin</small>
+              <strong>{displayName}</strong>
+              <small>{displayEmail}</small>
             </div>
           </div>
         </div>

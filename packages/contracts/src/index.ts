@@ -72,11 +72,19 @@ export const catalogProductSchema = z.object({
   status: z.enum(["ACTIVE", "INACTIVE"]),
 });
 
+export const commerceDestinationSchema = z.object({
+  providerStoreId: z.string(),
+  providerCategoryId: z.string(),
+});
+
 export const experienceSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   contextTitle: z.string(),
   channel: z.string(),
+  connectionId: z.string().uuid().optional(),
+  territory: z.string().optional(),
+  destination: commerceDestinationSchema.optional(),
   version: z.number().int().positive(),
   status: experienceStatusSchema,
   handoffMode: handoffModeSchema,
@@ -124,6 +132,7 @@ export const dashboardSchema = z.object({
   recentOrders: z.array(orderSchema),
 });
 
+export type CommerceDestination = z.infer<typeof commerceDestinationSchema>;
 export type CatalogProduct = z.infer<typeof catalogProductSchema>;
 export type OrganizationProfile = z.infer<typeof organizationProfileSchema>;
 export type Experience = z.infer<typeof experienceSchema>;
@@ -223,15 +232,24 @@ export const demoProducts: CatalogProduct[] = [
   },
 ];
 
+const DEMO_CONNECTION_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+const DEMO_DESTINATION: CommerceDestination = {
+  providerStoreId: "rappi-store-ar-001",
+  providerCategoryId: "snacks-drinks",
+};
+
 export const demoExperiences: Experience[] = [
   {
     id: "184a63fe-4420-46de-9894-b16110364263",
     name: "Toy Story Movie Night",
     contextTitle: "Toy Story",
     channel: "Disney+",
+    connectionId: DEMO_CONNECTION_ID,
+    territory: "AR",
+    destination: DEMO_DESTINATION,
     version: 3,
     status: "PUBLISHED",
-    handoffMode: "DYNAMIC_STOREFRONT",
+    handoffMode: "STORE_DEEPLINK",
     productCount: 4,
     startsAt: "2026-08-01T00:00:00.000Z",
     endsAt: "2026-12-01T00:00:00.000Z",
@@ -241,9 +259,12 @@ export const demoExperiences: Experience[] = [
     name: "Moana Family Night",
     contextTitle: "Moana",
     channel: "Disney+",
+    connectionId: DEMO_CONNECTION_ID,
+    territory: "AR",
+    destination: DEMO_DESTINATION,
     version: 2,
     status: "PUBLISHED",
-    handoffMode: "DYNAMIC_STOREFRONT",
+    handoffMode: "STORE_DEEPLINK",
     productCount: 3,
     startsAt: "2026-08-10T00:00:00.000Z",
     endsAt: null,
@@ -253,6 +274,9 @@ export const demoExperiences: Experience[] = [
     name: "ESPN Match Night",
     contextTitle: "ESPN Live",
     channel: "ESPN",
+    connectionId: DEMO_CONNECTION_ID,
+    territory: "AR",
+    destination: DEMO_DESTINATION,
     version: 1,
     status: "IN_REVIEW",
     handoffMode: "STORE_DEEPLINK",
@@ -265,6 +289,9 @@ export const demoExperiences: Experience[] = [
     name: "Hulu Classics",
     contextTitle: "Hulu",
     channel: "Hulu",
+    connectionId: DEMO_CONNECTION_ID,
+    territory: "AR",
+    destination: DEMO_DESTINATION,
     version: 1,
     status: "DRAFT",
     handoffMode: "STORE_DEEPLINK",

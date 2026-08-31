@@ -1,11 +1,13 @@
 "use client";
 
 import type { Experience } from "@snapplay/contracts";
-import { Plus, X } from "lucide-react";
+import { Copy, Plus, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { StatusPill } from "@/components/ui";
 import { apiFetch } from "@/lib/api-client";
 import { formatDate } from "@/lib/format";
+
+const DEMO_CONNECTION_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 
 export function ExperiencesClient({
   initialExperiences,
@@ -16,6 +18,7 @@ export function ExperiencesClient({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -25,7 +28,12 @@ export function ExperiencesClient({
     const payload = {
       name: form.get("name"),
       contextTitle: form.get("contextTitle"),
-      channel: form.get("channel"),
+      connectionId: form.get("connectionId"),
+      territory: form.get("territory"),
+      destination: {
+        providerStoreId: form.get("providerStoreId"),
+        providerCategoryId: form.get("providerCategoryId"),
+      },
       handoffMode: form.get("handoffMode"),
       productCount: Number(form.get("productCount")),
       startsAt: new Date(String(form.get("startsAt"))).toISOString(),
@@ -38,10 +46,13 @@ export function ExperiencesClient({
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!response.ok)
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
         throw new Error(
-          "No se pudo crear. Verificá que la API esté corriendo en localhost:4000.",
+          (body as { message?: string }).message ??
+            "No se pudo crear. Verificá que la API esté corriendo.",
         );
+      }
       const created = (await response.json()) as Experience;
       setExperiences((current) => [created, ...current]);
       setOpen(false);
@@ -52,6 +63,32 @@ export function ExperiencesClient({
     }
   }
 
+  async function runAction(
+    id: string,
+    method: "PATCH" | "POST",
+    path: string,
+  ) {
+    setActionError(null);
+    try {
+      const response = await apiFetch(`/v1/experiences/${id}/${path}`, {
+        method,
+      });
+      if (!response.ok) throw new Error(`Error ${response.status}`);
+      const updated = (await response.json()) as Experience;
+      setExperiences((current) =>
+        current.map((e) => (e.id === updated.id ? updated : e)),
+      );
+      // Clone creates a new experience — append it
+      if (path === "clone") {
+        setExperiences((current) => [updated, ...current]);
+      }
+    } catch (cause) {
+      setActionError(
+        cause instanceof Error ? cause.message : "Acción fallida",
+      );
+    }
+  }
+
   return (
     <>
       <div className="toolbar" style={{ justifyContent: "flex-end" }}>
@@ -59,6 +96,11 @@ export function ExperiencesClient({
           <Plus size={16} /> Nueva experience
         </button>
       </div>
+      {actionError ? (
+        <div className="inline-alert" style={{ marginBottom: 12 }}>
+          {actionError}
+        </div>
+      ) : null}
       <section className="panel table-panel">
         <div className="table-scroll">
           <table>
@@ -66,12 +108,12 @@ export function ExperiencesClient({
               <tr>
                 <th>Nombre</th>
                 <th>Contexto</th>
-                <th>Canal</th>
+                <th>Destino</th>
                 <th>Handoff</th>
-                <th>SKU</th>
                 <th>Versión</th>
                 <th>Estado</th>
                 <th>Inicio</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -81,16 +123,85 @@ export function ExperiencesClient({
                     <strong>{item.name}</strong>
                   </td>
                   <td>{item.contextTitle}</td>
-                  <td>{item.channel}</td>
+                  <td>
+                    {item.destination ? (
+                      <span className="tag" style={{ fontSize: 11 }}>
+                        {item.destination.providerStoreId} /{" "}
+                        {item.destination.providerCategoryId}
+                      </span>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                  </td>
                   <td>
                     <span className="tag">{item.handoffMode}</span>
                   </td>
-                  <td>{item.productCount}</td>
                   <td>v{item.version}</td>
                   <td>
                     <StatusPill status={item.status} />
                   </td>
                   <td>{formatDate(item.startsAt)}</td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      {(item.status === "DRAFT" ||
+                        item.status === "IN_REVIEW") && (
+                        <button
+                          className="button primary"
+                          style={{ fontSize: 12, padding: "3px 10px" }}
+                          onClick={() =>
+                            runAction(item.id, "PATCH", "publish")
+                          }
+                        >
+                          Publicar
+                        </button>
+                      )}
+                      {item.status === "PUBLISHED" && (
+                        <>
+                          <button
+                            className="button"
+                            style={{ fontSize: 12, padding: "3px 10px" }}
+                            onClick={() =>
+                              runAction(item.id, "PATCH", "pause")
+                            }
+                          >
+                            Pausar
+                          </button>
+                          <button
+                            className="button"
+                            style={{ fontSize: 12, padding: "3px 10px" }}
+                            onClick={() =>
+                              runAction(item.id, "POST", "clone")
+                            }
+                          >
+                            Clonar
+                          </button>
+                        </>
+                      )}
+                      {(item.status === "PUBLISHED" ||
+                        item.status === "PAUSED") && (
+                        <button
+                          className="button"
+                          style={{ fontSize: 12, padding: "3px 10px", color: "var(--red, #c0392b)" }}
+                          onClick={() =>
+                            runAction(item.id, "PATCH", "retire")
+                          }
+                        >
+                          Retirar
+                        </button>
+                      )}
+                      {item.status === "PAUSED" && (
+                        <button
+                          className="button"
+                          style={{ fontSize: 12, padding: "3px 10px" }}
+                          onClick={() =>
+                            runAction(item.id, "POST", "clone")
+                          }
+                        >
+                          Clonar
+                        </button>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -110,8 +221,8 @@ export function ExperiencesClient({
               <div>
                 <h2 id="new-experience-title">Nueva experience</h2>
                 <p>
-                  Creá un borrador. Catálogo, contrato y vigencia se validan al
-                  publicar.
+                  Creá un borrador con store y categoría. Contrato y catálogo se
+                  validan al publicar.
                 </p>
               </div>
               <button
@@ -123,6 +234,12 @@ export function ExperiencesClient({
               </button>
             </div>
             <form className="form-grid" onSubmit={submit}>
+              {/* Hidden: connectionId for demo — in production fetched from /v1/connections */}
+              <input
+                type="hidden"
+                name="connectionId"
+                value={DEMO_CONNECTION_ID}
+              />
               <div className="form-field full">
                 <label htmlFor="name">Nombre</label>
                 <input
@@ -145,12 +262,37 @@ export function ExperiencesClient({
                 />
               </div>
               <div className="form-field">
-                <label htmlFor="channel">Canal</label>
-                <select className="select-input" id="channel" name="channel">
-                  <option>Disney+</option>
-                  <option>ESPN</option>
-                  <option>Hulu</option>
+                <label htmlFor="territory">Territorio</label>
+                <select
+                  className="select-input"
+                  id="territory"
+                  name="territory"
+                >
+                  <option value="AR">Argentina (AR)</option>
+                  <option value="MX">México (MX)</option>
+                  <option value="CO">Colombia (CO)</option>
+                  <option value="BR">Brasil (BR)</option>
                 </select>
+              </div>
+              <div className="form-field">
+                <label htmlFor="providerStoreId">Store ID (Rappi)</label>
+                <input
+                  className="text-input"
+                  id="providerStoreId"
+                  name="providerStoreId"
+                  defaultValue="rappi-store-ar-001"
+                  required
+                />
+              </div>
+              <div className="form-field">
+                <label htmlFor="providerCategoryId">Categoría ID (Rappi)</label>
+                <input
+                  className="text-input"
+                  id="providerCategoryId"
+                  name="providerCategoryId"
+                  defaultValue="snacks-drinks"
+                  required
+                />
               </div>
               <div className="form-field">
                 <label htmlFor="handoffMode">Modo de handoff</label>
@@ -159,8 +301,8 @@ export function ExperiencesClient({
                   id="handoffMode"
                   name="handoffMode"
                 >
-                  <option value="DYNAMIC_STOREFRONT">Dynamic storefront</option>
                   <option value="STORE_DEEPLINK">Store deep link</option>
+                  <option value="DYNAMIC_STOREFRONT">Dynamic storefront</option>
                   <option value="CART_HANDOFF">Cart handoff</option>
                 </select>
               </div>
