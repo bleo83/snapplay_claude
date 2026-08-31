@@ -4,6 +4,7 @@ import io.snapplay.common.PageResult
 import io.snapplay.config.SnapPlayProperties
 import io.snapplay.links.application.port.output.CreateSmartLinkInput
 import io.snapplay.links.application.port.output.SmartLinkRepository
+import io.snapplay.links.domain.ResolvedSmartLink
 import io.snapplay.links.domain.SmartLink
 import io.snapplay.links.domain.SmartLinkStatus
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -15,6 +16,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 @ConditionalOnProperty(name = ["snapplay.demo"], havingValue = "true")
 class DemoSmartLinkRepository(
     private val props: SnapPlayProperties,
+    private val demoSmartLinkResolver: DemoSmartLinkResolver,
 ) : SmartLinkRepository {
     private val links: MutableList<SmartLink> =
         CopyOnWriteArrayList(
@@ -70,6 +72,17 @@ class DemoSmartLinkRepository(
                 conversions = 0,
             )
         links.add(0, link)
+        demoSmartLinkResolver.registerResolved(
+            ResolvedSmartLink(
+                smartLinkId = link.id,
+                shortCode = link.shortCode,
+                experienceVersionId = UUID.fromString("00000000-0000-0000-0000-000000000002"),
+                connectionId = UUID.fromString("00000000-0000-0000-0000-000000000001"),
+                providerStoreId = "900000",
+                providerCategoryId = "2000",
+                handoffMode = "STORE_DEEPLINK",
+            ),
+        )
         return link
     }
 
