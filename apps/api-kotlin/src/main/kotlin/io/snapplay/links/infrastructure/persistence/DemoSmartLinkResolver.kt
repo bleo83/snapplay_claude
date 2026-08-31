@@ -32,6 +32,7 @@ class DemoSmartLinkResolver : SmartLinkResolver {
                         providerStoreId = "900000",
                         providerCategoryId = "2000",
                         handoffMode = "STORE_DEEPLINK",
+                        territory = "AR",
                     ),
                 // Moana Family Night is intentionally excluded — its experience is DRAFT
             ),

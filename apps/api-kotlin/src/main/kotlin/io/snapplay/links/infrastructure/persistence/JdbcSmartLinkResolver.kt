@@ -24,6 +24,7 @@ class JdbcSmartLinkResolver(
                    ev.id        AS version_id,
                    e.connection_id,
                    ev.store_selection,
+                   ev.eligibility,
                    ev.handoff_mode
             FROM smart_links sl
             JOIN experiences e ON e.id = sl.experience_id
@@ -42,6 +43,11 @@ class JdbcSmartLinkResolver(
             { rs, _ ->
                 val storeSelection: Map<String, String> =
                     objectMapper.readValue(rs.getString("store_selection") ?: "{}")
+
+                @Suppress("UNCHECKED_CAST")
+                val eligibility: Map<String, Any> =
+                    objectMapper.readValue(rs.getString("eligibility") ?: "{}")
+                val territory = (eligibility["countries"] as? List<String>)?.firstOrNull() ?: ""
                 ResolvedSmartLink(
                     smartLinkId = UUID.fromString(rs.getString("smart_link_id")),
                     shortCode = rs.getString("short_code"),
@@ -50,6 +56,7 @@ class JdbcSmartLinkResolver(
                     providerStoreId = storeSelection["provider_store_id"] ?: "",
                     providerCategoryId = storeSelection["provider_category_id"] ?: "",
                     handoffMode = rs.getString("handoff_mode"),
+                    territory = territory,
                 )
             },
             shortCode,
