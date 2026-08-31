@@ -32,6 +32,7 @@ snapplay:
   backoffice-url: ${SNAPPLAY_BACKOFFICE_URL:http://localhost:3000}
   allowed-origins: ${SNAPPLAY_ALLOWED_ORIGINS:http://localhost:3000}
   rappi-webhook-secret: ${RAPPI_WEBHOOK_SECRET:}
+  rappi-mock-enabled: ${RAPPI_MOCK_ENABLED:false}
 
 springdoc:
   api-docs:
