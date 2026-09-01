@@ -25,6 +25,10 @@ class DemoHandoffSessionRepository : HandoffSessionRepository {
         byId[session.id] = session
     }
 
+    fun findAll(): Collection<HandoffSession> = byId.values
+
+    fun clear() = byId.clear()
+
     fun findByTokenHash(tokenHash: String): HandoffSession? = byId.values.firstOrNull { it.trackingTokenHash == tokenHash }
 
     override fun updateStatus(

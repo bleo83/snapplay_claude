@@ -54,6 +54,8 @@ class DemoProviderOrderRepository : ProviderOrderRepository {
         }
     }
 
+    fun clear() = store.clear()
+
     fun findByRef(
         connectionId: UUID,
         providerOrderRef: String,
