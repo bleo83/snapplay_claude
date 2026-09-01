@@ -8,10 +8,14 @@ import io.snapplay.partner.application.port.input.IngestResult
 import io.snapplay.partner.application.port.output.HandoffSessionPort
 import io.snapplay.partner.application.port.output.OutboxEventRepository
 import io.snapplay.partner.application.port.output.PartnerEventRepository
+import io.snapplay.partner.application.port.output.ProviderOrderRepository
+import io.snapplay.partner.application.port.output.ProviderOrderUpsert
 import io.snapplay.partner.application.usecase.IngestWebhookUseCaseImpl
 import io.snapplay.partner.domain.HandoffSessionRef
 import io.snapplay.partner.domain.OutboxEvent
 import io.snapplay.partner.domain.PartnerEvent
+import io.snapplay.partner.domain.ProviderOrderStatus
+import io.snapplay.partner.domain.UpsertOutcome
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -99,12 +103,25 @@ private class FakeHandoffSessionPort(
     }
 }
 
+private class FakeProviderOrderRepository : ProviderOrderRepository {
+    val upserts = mutableListOf<ProviderOrderUpsert>()
+
+    override fun upsert(
+        upsert: ProviderOrderUpsert,
+        partnerEventId: UUID,
+    ): UpsertOutcome {
+        upserts.add(upsert)
+        return UpsertOutcome.Created(UUID.randomUUID())
+    }
+}
+
 // --- Tests ---
 
 class IngestWebhookUseCaseTest {
     private lateinit var eventRepo: FakePartnerEventRepository
     private lateinit var outboxRepo: FakeOutboxEventRepository
     private lateinit var sessionPort: FakeHandoffSessionPort
+    private lateinit var orderRepo: FakeProviderOrderRepository
     private lateinit var useCase: IngestWebhookUseCaseImpl
 
     @BeforeEach
@@ -112,11 +129,13 @@ class IngestWebhookUseCaseTest {
         eventRepo = FakePartnerEventRepository()
         outboxRepo = FakeOutboxEventRepository()
         sessionPort = FakeHandoffSessionPort()
+        orderRepo = FakeProviderOrderRepository()
         useCase =
             IngestWebhookUseCaseImpl(
                 eventRepo,
                 outboxRepo,
                 sessionPort,
+                orderRepo,
                 objectMapper,
                 SnapPlayProperties(rappiWebhookSecret = SECRET),
             )
@@ -174,6 +193,7 @@ class IngestWebhookUseCaseTest {
                 eventRepo,
                 outboxRepo,
                 FakeHandoffSessionPort(ref = null),
+                orderRepo,
                 objectMapper,
                 SnapPlayProperties(rappiWebhookSecret = SECRET),
             )
@@ -209,6 +229,7 @@ class IngestWebhookUseCaseTest {
                 eventRepo,
                 outboxRepo,
                 sessionPort,
+                orderRepo,
                 objectMapper,
                 SnapPlayProperties(rappiWebhookSecret = ""),
             )
@@ -230,5 +251,37 @@ class IngestWebhookUseCaseTest {
         assertThat(outbox.aggregateType).isEqualTo("PartnerEvent")
         assertThat(outbox.eventType).isEqualTo("ORDER_CANCELLED")
         assertThat(outbox.aggregateId).isEqualTo(eventRepo.saved.first().id)
+    }
+
+    @Test
+    fun `valid ORDER_DELIVERED event triggers provider order upsert`() {
+        val body = buildPayload(eventType = "ORDER_DELIVERED")
+        val sig = hmacSha256(body, SECRET)
+
+        useCase.ingest(body.toByteArray(), sig)
+
+        assertThat(orderRepo.upserts).hasSize(1)
+        assertThat(orderRepo.upserts.first().newStatus).isEqualTo(ProviderOrderStatus.DELIVERED)
+    }
+
+    @Test
+    fun `order total is converted to minor units`() {
+        val body = buildPayload()
+        val sig = hmacSha256(body, SECRET)
+
+        useCase.ingest(body.toByteArray(), sig)
+
+        // Mock payload has order_total = 15.99 → 1599 minor units
+        assertThat(orderRepo.upserts.first().orderTotalMinor).isEqualTo(1599L)
+    }
+
+    @Test
+    fun `order upsert uses connection_id from handoff session`() {
+        val body = buildPayload()
+        val sig = hmacSha256(body, SECRET)
+
+        useCase.ingest(body.toByteArray(), sig)
+
+        assertThat(orderRepo.upserts.first().connectionId).isEqualTo(CONNECTION_ID)
     }
 }

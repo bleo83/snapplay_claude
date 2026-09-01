@@ -10,9 +10,13 @@ import io.snapplay.partner.application.port.input.IngestWebhookUseCase
 import io.snapplay.partner.application.port.output.HandoffSessionPort
 import io.snapplay.partner.application.port.output.OutboxEventRepository
 import io.snapplay.partner.application.port.output.PartnerEventRepository
+import io.snapplay.partner.application.port.output.ProviderOrderRepository
+import io.snapplay.partner.application.port.output.ProviderOrderUpsert
 import io.snapplay.partner.domain.OutboxEvent
 import io.snapplay.partner.domain.PartnerEvent
 import io.snapplay.partner.domain.PartnerEventStatus
+import io.snapplay.partner.domain.ProviderOrderStatus
+import io.snapplay.partner.domain.UpsertOutcome
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.security.MessageDigest
@@ -21,12 +25,15 @@ import java.time.temporal.ChronoUnit
 import java.util.UUID
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
+import kotlin.math.abs
+import kotlin.math.roundToLong
 
 @Service
 class IngestWebhookUseCaseImpl(
     private val partnerEventRepository: PartnerEventRepository,
     private val outboxEventRepository: OutboxEventRepository,
     private val handoffSessionPort: HandoffSessionPort,
+    private val providerOrderRepository: ProviderOrderRepository,
     private val objectMapper: ObjectMapper,
     private val props: SnapPlayProperties,
 ) : IngestWebhookUseCase {
@@ -36,6 +43,7 @@ class IngestWebhookUseCaseImpl(
         private const val TIMESTAMP_TOLERANCE_MINUTES = 5L
         private const val SCHEMA_VERSION = "1.0"
         private const val AGGREGATE_TYPE = "PartnerEvent"
+        private const val MINOR_UNIT_FACTOR = 100L
     }
 
     override fun ingest(
@@ -91,25 +99,96 @@ class IngestWebhookUseCaseImpl(
             return IngestResult.DUPLICATE
         }
 
-        val outboxEvent =
-            OutboxEvent(
-                id = UUID.randomUUID(),
-                aggregateType = AGGREGATE_TYPE,
-                aggregateId = event.id,
-                eventType = eventType,
-                schemaVersion = SCHEMA_VERSION,
-                payload = payloadJson,
-                occurredAt = occurredAt,
-            )
-        runCatching { outboxEventRepository.enqueue(outboxEvent) }
+        // Best-effort post-save operations — failures must not block the 202 ACK
+        runCatching { outboxEventRepository.enqueue(buildOutboxEvent(event, payloadJson, occurredAt)) }
             .onFailure { log.error("Failed to enqueue outbox event for partner_event={}", event.id, it) }
 
         runCatching { handoffSessionPort.markConverted(sessionRef.id) }
             .onFailure { log.warn("Failed to mark handoff session {} as CONVERTED", sessionRef.id, it) }
 
+        if (providerOrderRef != null) {
+            runCatching {
+                upsertOrder(event, sessionRef.id, providerOrderRef, eventType, payload, occurredAt)
+            }.onFailure {
+                log.error(
+                    "Failed to upsert provider_order for partner_event={} ref={}",
+                    event.id,
+                    providerOrderRef,
+                    it,
+                )
+            }
+        }
+
         log.info("Ingested webhook event_id={} type={} session={}", eventId, eventType, sessionRef.id)
         return IngestResult.ACCEPTED
     }
+
+    private fun upsertOrder(
+        event: PartnerEvent,
+        sessionId: UUID,
+        providerOrderRef: String,
+        eventType: String,
+        payload: Map<String, Any?>,
+        occurredAt: Instant,
+    ) {
+        val status = ProviderOrderStatus.fromEventType(eventType)
+        if (status == null) {
+            log.warn("Unrecognised event_type={} — skipping order upsert", eventType)
+            return
+        }
+
+        val orderTotalMinor =
+            ((payload["order_total"] as? Number)?.toDouble() ?: 0.0)
+                .times(MINOR_UNIT_FACTOR).roundToLong()
+        val currency = (payload["currency"] as? String) ?: "ARS"
+        val deliveredAt = if (status == ProviderOrderStatus.DELIVERED) occurredAt else null
+
+        val upsert =
+            ProviderOrderUpsert(
+                connectionId = event.connectionId,
+                handoffId = sessionId,
+                providerOrderRef = providerOrderRef,
+                newStatus = status,
+                currency = currency,
+                orderTotalMinor = orderTotalMinor,
+                placedAt = occurredAt,
+                deliveredAt = deliveredAt,
+            )
+
+        val outcome = providerOrderRepository.upsert(upsert, event.id)
+        when (outcome) {
+            is UpsertOutcome.Created -> log.info("Created provider_order={} ref={} status={}", outcome.orderId, providerOrderRef, status)
+            is UpsertOutcome.StatusAdvanced ->
+                log.info(
+                    "Advanced provider_order={} {}→{}",
+                    outcome.orderId,
+                    outcome.fromStatus,
+                    status,
+                )
+            is UpsertOutcome.OutOfOrder ->
+                log.info(
+                    "Out-of-order event for order={} — current={} incoming={} ignored",
+                    outcome.orderId,
+                    outcome.currentStatus,
+                    status,
+                )
+        }
+    }
+
+    private fun buildOutboxEvent(
+        event: PartnerEvent,
+        payloadJson: String,
+        occurredAt: Instant,
+    ): OutboxEvent =
+        OutboxEvent(
+            id = UUID.randomUUID(),
+            aggregateType = AGGREGATE_TYPE,
+            aggregateId = event.id,
+            eventType = event.eventType,
+            schemaVersion = SCHEMA_VERSION,
+            payload = payloadJson,
+            occurredAt = occurredAt,
+        )
 
     private fun validateSignature(
         rawBody: ByteArray,
@@ -127,8 +206,7 @@ class IngestWebhookUseCaseImpl(
     }
 
     private fun validateTimestamp(occurredAt: Instant) {
-        val now = Instant.now()
-        val diff = Math.abs(ChronoUnit.MINUTES.between(occurredAt, now))
+        val diff = abs(ChronoUnit.MINUTES.between(occurredAt, Instant.now()))
         if (diff > TIMESTAMP_TOLERANCE_MINUTES) {
             throw ValidationException(
                 "Event timestamp is outside the ${TIMESTAMP_TOLERANCE_MINUTES}-minute tolerance window (occurred_at=$occurredAt)",

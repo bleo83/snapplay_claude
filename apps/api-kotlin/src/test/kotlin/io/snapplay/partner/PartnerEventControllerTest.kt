@@ -4,6 +4,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.snapplay.links.domain.HandoffSession
 import io.snapplay.links.domain.HandoffSessionStatus
 import io.snapplay.links.infrastructure.persistence.DemoHandoffSessionRepository
+import io.snapplay.partner.domain.ProviderOrderStatus
+import io.snapplay.partner.infrastructure.persistence.DemoProviderOrderRepository
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -38,6 +41,9 @@ class PartnerEventControllerTest {
 
     @Autowired
     lateinit var demoSessionRepo: DemoHandoffSessionRepository
+
+    @Autowired
+    lateinit var demoOrderRepo: DemoProviderOrderRepository
 
     private lateinit var rawToken: String
     private lateinit var sessionId: UUID
@@ -146,16 +152,87 @@ class PartnerEventControllerTest {
             .andExpect { status { isUnprocessableEntity() } }
     }
 
+    @Test
+    fun `valid ORDER_DELIVERED event materialises a provider order with DELIVERED status`() {
+        val orderId = "ORD-${UUID.randomUUID()}"
+        val body = buildBody(trackingToken = rawToken, orderId = orderId)
+        val sig = sign(body, WEBHOOK_SECRET)
+
+        mockMvc
+            .post("/v1/partner/events") {
+                contentType = MediaType.APPLICATION_JSON
+                content = body
+                header("X-Rappi-Signature", sig)
+            }
+            .andExpect { status { isAccepted() } }
+
+        val order = demoOrderRepo.findByRef(connectionId, orderId)
+        assertThat(order).isNotNull
+        assertThat(order!!.status).isEqualTo(ProviderOrderStatus.DELIVERED)
+        assertThat(order.orderTotalMinor).isEqualTo(1599L)
+    }
+
+    @Test
+    fun `out-of-order DELIVERED then PLACED does not revert order status`() {
+        val orderId = "ORD-${UUID.randomUUID()}"
+        val deliveredBody = buildBody(trackingToken = rawToken, orderId = orderId, eventType = "ORDER_DELIVERED")
+        val deliveredSig = sign(deliveredBody, WEBHOOK_SECRET)
+
+        // First event: DELIVERED
+        mockMvc
+            .post("/v1/partner/events") {
+                contentType = MediaType.APPLICATION_JSON
+                content = deliveredBody
+                header("X-Rappi-Signature", deliveredSig)
+            }
+            .andExpect { status { isAccepted() } }
+
+        // Re-seed session (first event converts it; need a new session for the second call)
+        val rawToken2 = UUID.randomUUID().toString().replace("-", "")
+        val now = Instant.now()
+        demoSessionRepo.create(
+            HandoffSession(
+                id = UUID.randomUUID(),
+                smartLinkId = UUID.randomUUID(),
+                experienceVersionId = UUID.randomUUID(),
+                connectionId = connectionId,
+                trackingTokenHash = sha256Hex(rawToken2),
+                dataSharingMode = "AGGREGATED",
+                status = HandoffSessionStatus.REDIRECTED,
+                expiresAt = now.plus(30, ChronoUnit.MINUTES),
+                createdAt = now,
+                updatedAt = now,
+            ),
+        )
+
+        val placedBody = buildBody(trackingToken = rawToken2, orderId = orderId, eventType = "ORDER_PLACED")
+        val placedSig = sign(placedBody, WEBHOOK_SECRET)
+
+        // Second event: PLACED (out-of-order — should be ignored)
+        mockMvc
+            .post("/v1/partner/events") {
+                contentType = MediaType.APPLICATION_JSON
+                content = placedBody
+                header("X-Rappi-Signature", placedSig)
+            }
+            .andExpect { status { isAccepted() } }
+
+        val order = demoOrderRepo.findByRef(connectionId, orderId)
+        assertThat(order!!.status).isEqualTo(ProviderOrderStatus.DELIVERED)
+    }
+
     private fun buildBody(
         trackingToken: String,
         eventId: String = UUID.randomUUID().toString(),
         occurredAt: Instant = Instant.now(),
+        eventType: String = "ORDER_DELIVERED",
+        orderId: String = "ORD-${UUID.randomUUID()}",
     ): String =
         mapper.writeValueAsString(
             mapOf(
                 "event_id" to eventId,
-                "event_type" to "ORDER_DELIVERED",
-                "order_id" to "ORD-${UUID.randomUUID()}",
+                "event_type" to eventType,
+                "order_id" to orderId,
                 "store_id" to "900000",
                 "category_id" to "2000",
                 "tracking_token" to trackingToken,
