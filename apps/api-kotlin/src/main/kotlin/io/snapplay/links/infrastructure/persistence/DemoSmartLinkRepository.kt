@@ -82,6 +82,7 @@ class DemoSmartLinkRepository(
                 providerCategoryId = "2000",
                 handoffMode = "STORE_DEEPLINK",
                 territory = "AR",
+                dataSharingMode = "AGGREGATED",
             ),
         )
         return link

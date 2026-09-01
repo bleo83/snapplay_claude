@@ -13,4 +13,5 @@ data class SnapPlayProperties(
     val rappiWebBaseUrl: String = "https://www.rappi.com.ar",
     val rappiAppScheme: String = "rappi",
     val rappiMockEnabled: Boolean = false,
+    val handoffSessionTtlMinutes: Long = 30,
 )
