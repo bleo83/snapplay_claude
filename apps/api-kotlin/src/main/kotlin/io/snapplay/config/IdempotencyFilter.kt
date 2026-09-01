@@ -19,7 +19,7 @@ class IdempotencyFilter(
 ) : OncePerRequestFilter() {
     companion object {
         private val IDEMPOTENT_METHODS = setOf("POST", "PATCH")
-        private val IDEMPOTENT_PATHS = setOf("/v1/experiences", "/v1/partner/events")
+        private val IDEMPOTENT_PATHS = setOf("/v1/experiences")
 
         // UUID (8-4-4-4-12 hex) or ULID (26 alphanumeric chars)
         private val VALID_KEY =
