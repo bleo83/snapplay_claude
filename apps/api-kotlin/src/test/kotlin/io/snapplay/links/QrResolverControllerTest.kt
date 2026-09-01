@@ -1,5 +1,6 @@
 package io.snapplay.links
 
+import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -27,7 +28,10 @@ class QrResolverControllerTest {
             .get("/r/$ACTIVE_SHORT_CODE")
             .andExpect {
                 status { isFound() }
-                header { string("Location", "https://www.rappi.com.ar/stores/900000?category=2000") }
+                // snp_tk is a per-request UUID — match stable parts only
+                header { string("Location", containsString("https://www.rappi.com.ar/tiendas/900000")) }
+                header { string("Location", containsString("categoriaId=2000")) }
+                header { string("Location", containsString("snp_tk=")) }
                 header { string("Cache-Control", "no-store") }
             }
     }

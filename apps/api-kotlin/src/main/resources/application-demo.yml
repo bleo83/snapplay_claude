@@ -1,5 +1,7 @@
 snapplay:
   demo: true
+  # Override with RAPPI_MOCK_ENABLED=true to activate the mock landing page and order event emitter
+  rappi-mock-enabled: ${RAPPI_MOCK_ENABLED:false}
 
 spring:
   autoconfigure:
