@@ -25,12 +25,15 @@ class JdbcSmartLinkResolver(
                    e.connection_id,
                    ev.store_selection,
                    ev.eligibility,
-                   ev.handoff_mode
+                   ev.handoff_mode,
+                   dsp.mode     AS data_sharing_mode
             FROM smart_links sl
             JOIN experiences e ON e.id = sl.experience_id
             JOIN experience_versions ev
                 ON ev.experience_id = e.id
                AND ev.version = e.current_version
+            JOIN connections c ON c.id = e.connection_id
+            JOIN data_sharing_policies dsp ON dsp.id = c.data_sharing_policy_id
             WHERE sl.short_code = ?
               AND sl.status = 'ACTIVE'
               AND (sl.expires_at IS NULL OR sl.expires_at > now())
@@ -57,6 +60,7 @@ class JdbcSmartLinkResolver(
                     providerCategoryId = storeSelection["provider_category_id"] ?: "",
                     handoffMode = rs.getString("handoff_mode"),
                     territory = territory,
+                    dataSharingMode = rs.getString("data_sharing_mode"),
                 )
             },
             shortCode,

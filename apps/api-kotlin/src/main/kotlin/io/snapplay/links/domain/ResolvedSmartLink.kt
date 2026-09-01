@@ -11,4 +11,5 @@ data class ResolvedSmartLink(
     val providerCategoryId: String,
     val handoffMode: String,
     val territory: String,
+    val dataSharingMode: String,
 )
