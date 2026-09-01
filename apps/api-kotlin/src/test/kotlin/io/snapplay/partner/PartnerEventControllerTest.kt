@@ -5,6 +5,7 @@ import io.snapplay.links.domain.HandoffSession
 import io.snapplay.links.domain.HandoffSessionStatus
 import io.snapplay.links.infrastructure.persistence.DemoHandoffSessionRepository
 import io.snapplay.partner.domain.ProviderOrderStatus
+import io.snapplay.partner.infrastructure.persistence.DemoPartnerEventRepository
 import io.snapplay.partner.infrastructure.persistence.DemoProviderOrderRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -45,12 +46,18 @@ class PartnerEventControllerTest {
     @Autowired
     lateinit var demoOrderRepo: DemoProviderOrderRepository
 
+    @Autowired
+    lateinit var demoEventRepo: DemoPartnerEventRepository
+
     private lateinit var rawToken: String
     private lateinit var sessionId: UUID
     private lateinit var connectionId: UUID
 
     @BeforeEach
     fun seedHandoffSession() {
+        demoSessionRepo.clear()
+        demoOrderRepo.clear()
+        demoEventRepo.clear()
         rawToken = UUID.randomUUID().toString().replace("-", "")
         sessionId = UUID.randomUUID()
         connectionId = UUID.fromString("00000000-0000-0000-0000-000000000001")

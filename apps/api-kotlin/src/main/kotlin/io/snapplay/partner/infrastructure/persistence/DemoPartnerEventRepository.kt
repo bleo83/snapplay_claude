@@ -11,6 +11,8 @@ import java.util.concurrent.ConcurrentHashMap
 class DemoPartnerEventRepository : PartnerEventRepository {
     private val store = ConcurrentHashMap<String, PartnerEvent>()
 
+    fun clear() = store.clear()
+
     override fun existsByEventId(eventId: String): Boolean = store.containsKey(eventId)
 
     override fun save(event: PartnerEvent): Boolean = store.putIfAbsent(event.eventId, event) == null
