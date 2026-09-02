@@ -14,4 +14,5 @@ data class SnapPlayProperties(
     val rappiAppScheme: String = "rappi",
     val rappiMockEnabled: Boolean = false,
     val handoffSessionTtlMinutes: Long = 30,
+    val pollingTokenTtlMinutes: Long = 60,
 )

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.snapplay.common.UnauthorizedException
 import io.snapplay.common.ValidationException
 import io.snapplay.config.SnapPlayProperties
+import io.snapplay.notifications.application.port.input.EnqueueMilestoneUseCase
+import io.snapplay.notifications.domain.OrderMilestone
 import io.snapplay.partner.application.port.input.IngestResult
 import io.snapplay.partner.application.port.output.HandoffSessionPort
 import io.snapplay.partner.application.port.output.OutboxEventRepository
@@ -103,6 +105,20 @@ private class FakeHandoffSessionPort(
     }
 }
 
+private class FakeEnqueueMilestoneUseCase : EnqueueMilestoneUseCase {
+    val enqueued = mutableListOf<Triple<UUID, UUID, OrderMilestone>>()
+
+    override fun enqueue(
+        connectionId: UUID,
+        handoffSessionId: UUID,
+        providerOrderId: UUID,
+        milestone: OrderMilestone,
+        occurredAt: java.time.Instant,
+    ) {
+        enqueued.add(Triple(connectionId, handoffSessionId, milestone))
+    }
+}
+
 private class FakeProviderOrderRepository : ProviderOrderRepository {
     val upserts = mutableListOf<ProviderOrderUpsert>()
 
@@ -122,6 +138,7 @@ class IngestWebhookUseCaseTest {
     private lateinit var outboxRepo: FakeOutboxEventRepository
     private lateinit var sessionPort: FakeHandoffSessionPort
     private lateinit var orderRepo: FakeProviderOrderRepository
+    private lateinit var milestoneUseCase: FakeEnqueueMilestoneUseCase
     private lateinit var useCase: IngestWebhookUseCaseImpl
 
     @BeforeEach
@@ -130,12 +147,14 @@ class IngestWebhookUseCaseTest {
         outboxRepo = FakeOutboxEventRepository()
         sessionPort = FakeHandoffSessionPort()
         orderRepo = FakeProviderOrderRepository()
+        milestoneUseCase = FakeEnqueueMilestoneUseCase()
         useCase =
             IngestWebhookUseCaseImpl(
                 eventRepo,
                 outboxRepo,
                 sessionPort,
                 orderRepo,
+                milestoneUseCase,
                 objectMapper,
                 SnapPlayProperties(rappiWebhookSecret = SECRET),
             )
@@ -194,6 +213,7 @@ class IngestWebhookUseCaseTest {
                 outboxRepo,
                 FakeHandoffSessionPort(ref = null),
                 orderRepo,
+                milestoneUseCase,
                 objectMapper,
                 SnapPlayProperties(rappiWebhookSecret = SECRET),
             )
@@ -230,6 +250,7 @@ class IngestWebhookUseCaseTest {
                 outboxRepo,
                 sessionPort,
                 orderRepo,
+                milestoneUseCase,
                 objectMapper,
                 SnapPlayProperties(rappiWebhookSecret = ""),
             )

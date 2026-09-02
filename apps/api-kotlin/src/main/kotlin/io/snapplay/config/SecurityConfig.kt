@@ -59,6 +59,8 @@ class SecurityConfig(
                     .permitAll()
                     .requestMatchers("/v1/partner/events")
                     .permitAll()
+                    .requestMatchers("/v1/sessions/milestone")
+                    .permitAll()
                 if (jwksUri.isNotBlank()) {
                     auth.requestMatchers("/v1/**").authenticated()
                 } else {
