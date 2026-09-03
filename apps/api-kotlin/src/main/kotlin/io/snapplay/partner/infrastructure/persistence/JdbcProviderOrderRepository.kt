@@ -20,7 +20,7 @@ class JdbcProviderOrderRepository(
 ) : ProviderOrderRepository {
     override fun upsert(
         upsert: ProviderOrderUpsert,
-        partnerEventId: UUID,
+        partnerEventId: UUID?,
     ): UpsertOutcome {
         val existing = findByRef(upsert.connectionId, upsert.providerOrderRef)
 
@@ -112,7 +112,7 @@ class JdbcProviderOrderRepository(
         orderId: UUID,
         fromStatus: ProviderOrderStatus?,
         toStatus: ProviderOrderStatus,
-        partnerEventId: UUID,
+        partnerEventId: UUID?,
         occurredAt: Instant,
     ) {
         jdbc.update(

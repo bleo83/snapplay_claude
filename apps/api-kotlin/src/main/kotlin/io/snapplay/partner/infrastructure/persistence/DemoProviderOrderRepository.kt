@@ -21,7 +21,7 @@ class DemoProviderOrderRepository : ProviderOrderRepository {
 
     override fun upsert(
         upsert: ProviderOrderUpsert,
-        partnerEventId: UUID,
+        partnerEventId: UUID?,
     ): UpsertOutcome {
         val key = "${upsert.connectionId}:${upsert.providerOrderRef}"
         val existing = store[key]

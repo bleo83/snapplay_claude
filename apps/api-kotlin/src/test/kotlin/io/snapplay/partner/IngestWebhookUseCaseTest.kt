@@ -124,7 +124,7 @@ private class FakeProviderOrderRepository : ProviderOrderRepository {
 
     override fun upsert(
         upsert: ProviderOrderUpsert,
-        partnerEventId: UUID,
+        partnerEventId: UUID?,
     ): UpsertOutcome {
         upserts.add(upsert)
         return UpsertOutcome.Created(UUID.randomUUID())
