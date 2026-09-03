@@ -29,6 +29,6 @@ interface ProviderOrderRepository {
      */
     fun upsert(
         upsert: ProviderOrderUpsert,
-        partnerEventId: UUID,
+        partnerEventId: UUID?,
     ): UpsertOutcome
 }
