@@ -5,6 +5,8 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.snapplay.common.UnauthorizedException
 import io.snapplay.common.ValidationException
 import io.snapplay.config.SnapPlayProperties
+import io.snapplay.notifications.application.port.input.EnqueueMilestoneUseCase
+import io.snapplay.notifications.domain.OrderMilestone
 import io.snapplay.partner.application.port.input.IngestResult
 import io.snapplay.partner.application.port.input.IngestWebhookUseCase
 import io.snapplay.partner.application.port.output.HandoffSessionPort
@@ -34,6 +36,7 @@ class IngestWebhookUseCaseImpl(
     private val outboxEventRepository: OutboxEventRepository,
     private val handoffSessionPort: HandoffSessionPort,
     private val providerOrderRepository: ProviderOrderRepository,
+    private val enqueueMilestoneUseCase: EnqueueMilestoneUseCase,
     private val objectMapper: ObjectMapper,
     private val props: SnapPlayProperties,
 ) : IngestWebhookUseCase {
@@ -157,14 +160,14 @@ class IngestWebhookUseCaseImpl(
 
         val outcome = providerOrderRepository.upsert(upsert, event.id)
         when (outcome) {
-            is UpsertOutcome.Created -> log.info("Created provider_order={} ref={} status={}", outcome.orderId, providerOrderRef, status)
-            is UpsertOutcome.StatusAdvanced ->
-                log.info(
-                    "Advanced provider_order={} {}→{}",
-                    outcome.orderId,
-                    outcome.fromStatus,
-                    status,
-                )
+            is UpsertOutcome.Created -> {
+                log.info("Created provider_order={} ref={} status={}", outcome.orderId, providerOrderRef, status)
+                enqueueMilestoneIfAllowed(event, sessionId, outcome.orderId, status, occurredAt)
+            }
+            is UpsertOutcome.StatusAdvanced -> {
+                log.info("Advanced provider_order={} {}→{}", outcome.orderId, outcome.fromStatus, status)
+                enqueueMilestoneIfAllowed(event, sessionId, outcome.orderId, status, occurredAt)
+            }
             is UpsertOutcome.OutOfOrder ->
                 log.info(
                     "Out-of-order event for order={} — current={} incoming={} ignored",
@@ -173,6 +176,25 @@ class IngestWebhookUseCaseImpl(
                     status,
                 )
         }
+    }
+
+    private fun enqueueMilestoneIfAllowed(
+        event: PartnerEvent,
+        sessionId: UUID,
+        orderId: UUID,
+        status: ProviderOrderStatus,
+        occurredAt: Instant,
+    ) {
+        val milestone = OrderMilestone.fromProviderStatus(status) ?: return
+        runCatching {
+            enqueueMilestoneUseCase.enqueue(
+                connectionId = event.connectionId,
+                handoffSessionId = sessionId,
+                providerOrderId = orderId,
+                milestone = milestone,
+                occurredAt = occurredAt,
+            )
+        }.onFailure { log.error("Failed to enqueue milestone {} for session={}", milestone, sessionId, it) }
     }
 
     private fun buildOutboxEvent(
