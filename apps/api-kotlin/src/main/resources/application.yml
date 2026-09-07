@@ -34,6 +34,15 @@ snapplay:
   rappi-webhook-secret: ${RAPPI_WEBHOOK_SECRET:}
   rappi-mock-enabled: ${RAPPI_MOCK_ENABLED:false}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+  metrics:
+    tags:
+      application: snapplay-api
+
 springdoc:
   api-docs:
     path: /api/openapi.json
