@@ -43,6 +43,51 @@ class PrincipalResolver(
             authentication.principal as? Jwt
                 ?: throw UnauthorizedException("Expected JWT principal")
 
+        // Service accounts use client_credentials grant → have client_id claim
+        val clientId = jwt.getClaimAsString("client_id")
+        if (clientId != null) {
+            return resolveServiceAccount(clientId)
+        }
+
+        return resolveUser(jwt)
+    }
+
+    private fun resolveServiceAccount(clientId: String): RequestPrincipal {
+        val template = jdbcTemplate ?: throw UnauthorizedException("Database not available")
+
+        data class SaRow(val id: UUID, val orgId: UUID, val connectionId: UUID?, val scopes: Set<String>)
+
+        val rows =
+            template.query(
+                "SELECT id, organization_id, connection_id, scopes FROM service_accounts WHERE client_id = ? AND status = 'ACTIVE' LIMIT 1",
+                { rs, _ ->
+                    SaRow(
+                        id = UUID.fromString(rs.getString("id")),
+                        orgId = UUID.fromString(rs.getString("organization_id")),
+                        connectionId = rs.getString("connection_id")?.let { UUID.fromString(it) },
+                        scopes = (rs.getArray("scopes")?.array as? Array<*>)?.map { it.toString() }?.toSet() ?: emptySet(),
+                    )
+                },
+                clientId,
+            )
+
+        if (rows.isEmpty()) {
+            log.warn("Service account not found or revoked: client_id={}", clientId)
+            throw UnauthorizedException("Invalid or revoked service account")
+        }
+
+        val sa = rows.first()
+        return RequestPrincipal(
+            userId = sa.id,
+            organizationId = sa.orgId,
+            roles = setOf(OrgRole.ANALYST),
+            principalType = PrincipalType.SERVICE_ACCOUNT,
+            connectionId = sa.connectionId,
+            scopes = sa.scopes,
+        )
+    }
+
+    private fun resolveUser(jwt: Jwt): RequestPrincipal {
         val userId =
             try {
                 UUID.fromString(jwt.subject)
@@ -51,9 +96,7 @@ class PrincipalResolver(
                 throw UnauthorizedException("Invalid user ID in JWT subject: ${jwt.subject}")
             }
 
-        val template =
-            jdbcTemplate
-                ?: throw UnauthorizedException("Database not available")
+        val template = jdbcTemplate ?: throw UnauthorizedException("Database not available")
 
         val memberships =
             template.query(
