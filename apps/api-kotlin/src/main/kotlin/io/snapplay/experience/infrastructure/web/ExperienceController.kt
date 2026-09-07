@@ -7,6 +7,8 @@ import io.snapplay.experience.application.port.input.ListExperiencesUseCase
 import io.snapplay.experience.application.port.input.PauseExperienceUseCase
 import io.snapplay.experience.application.port.input.PublishExperienceUseCase
 import io.snapplay.experience.application.port.input.RetireExperienceUseCase
+import io.snapplay.experience.application.port.input.ValidateExperienceUseCase
+import io.snapplay.experience.application.port.input.ValidationResult
 import io.snapplay.experience.domain.CommerceDestination
 import io.snapplay.experience.domain.Experience
 import io.snapplay.experience.domain.HandoffMode
@@ -62,6 +64,7 @@ class ExperienceController(
     private val pauseExperienceUseCase: PauseExperienceUseCase,
     private val retireExperienceUseCase: RetireExperienceUseCase,
     private val cloneExperienceUseCase: CloneExperienceUseCase,
+    private val validateExperienceUseCase: ValidateExperienceUseCase,
 ) {
     @GetMapping
     fun list(
@@ -99,6 +102,11 @@ class ExperienceController(
             principal,
         )
     }
+
+    @PostMapping("/{id}/validate")
+    fun validate(
+        @PathVariable id: UUID,
+    ): ValidationResult = validateExperienceUseCase.validate(id, principalResolver.resolve())
 
     @PatchMapping("/{id}/publish")
     fun publish(

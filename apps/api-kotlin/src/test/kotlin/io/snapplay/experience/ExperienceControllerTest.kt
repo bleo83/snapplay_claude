@@ -1,9 +1,13 @@
 package io.snapplay.experience
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.snapplay.catalog.infrastructure.persistence.DemoCategoryRepository
+import io.snapplay.catalog.infrastructure.persistence.DemoStoreRepository
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestMethodOrder
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -14,18 +18,43 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
+import java.time.Instant
+import java.util.UUID
 
 private const val DEMO_CONNECTION_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+private val CONNECTION_UUID = UUID.fromString(DEMO_CONNECTION_ID)
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("demo")
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ExperienceControllerTest {
     @Autowired
     lateinit var mockMvc: MockMvc
 
+    @Autowired
+    lateinit var demoStoreRepo: DemoStoreRepository
+
+    @Autowired
+    lateinit var demoCategoryRepo: DemoCategoryRepository
+
     private val mapper = jacksonObjectMapper()
+
+    @BeforeAll
+    fun seedCatalog() {
+        val now = Instant.now()
+        // Seed store/category pairs used by tests and demo experiences
+        val stores = listOf("s", "store-001", "rappi-store-ar-001", "900000")
+        val categories = listOf("c", "cat-999", "snacks-drinks", "2000")
+        for (storeId in stores) {
+            val sid = demoStoreRepo.upsert(CONNECTION_UUID, storeId, "Test Store $storeId", "AR", now)
+            for (catId in categories) {
+                val cid = demoCategoryRepo.upsert(CONNECTION_UUID, catId, "Test Cat $catId", now)
+                demoCategoryRepo.linkToStore(sid, cid)
+            }
+        }
+    }
 
     /** Creates a new DRAFT experience and returns its id. */
     private fun createDraft(name: String): String {

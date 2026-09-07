@@ -27,5 +27,6 @@ data class Connection(
     val territories: List<String>,
     val capabilities: Set<Capability>,
     val dataSharingPolicyId: UUID,
+    val killedAt: Instant? = null,
     val createdAt: Instant,
 )
