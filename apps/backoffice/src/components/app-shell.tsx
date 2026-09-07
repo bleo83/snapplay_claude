@@ -19,6 +19,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 const navigation = [
   { href: "/", label: "Resumen", icon: ChartNoAxesCombined },
+  { href: "/analytics", label: "Analytics", icon: Sparkles },
   { href: "/catalog", label: "Catálogo", icon: Boxes },
   { href: "/experiences", label: "Experiences", icon: Clapperboard },
   { href: "/smart-links", label: "Smart links", icon: Link2 },
