@@ -37,6 +37,7 @@ class JdbcAttributionFunnelRepository(
             LEFT JOIN provider_orders po ON po.handoff_id = hs.id
             WHERE hs.created_at >= ?
               AND hs.created_at < ?
+              AND hs.is_bot = false
             """.trimIndent()
 
         private const val CONNECTION_FILTER = "  AND hs.connection_id = ?"

@@ -24,7 +24,10 @@ class ResolveSmartLinkUseCaseImpl(
     private val handoffSessionRepository: HandoffSessionRepository,
     private val props: SnapPlayProperties,
 ) : ResolveSmartLinkUseCase {
-    override fun resolve(shortCode: String): URI? {
+    override fun resolve(
+        shortCode: String,
+        isBot: Boolean,
+    ): URI? {
         val resolved = smartLinkResolver.resolveByShortCode(shortCode) ?: return null
 
         // Raw token: 32 hex chars (UUID without dashes) — satisfies SAFE_VALUE regex in RappiDeepLinkAdapter.
@@ -42,6 +45,7 @@ class ResolveSmartLinkUseCaseImpl(
                 trackingTokenHash = tokenHash,
                 dataSharingMode = resolved.dataSharingMode,
                 status = HandoffSessionStatus.CREATED,
+                isBot = isBot,
                 expiresAt = now.plus(props.handoffSessionTtlMinutes, ChronoUnit.MINUTES),
                 createdAt = now,
                 updatedAt = now,
