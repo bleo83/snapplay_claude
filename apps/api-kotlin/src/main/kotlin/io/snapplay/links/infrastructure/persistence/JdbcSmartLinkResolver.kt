@@ -41,6 +41,8 @@ class JdbcSmartLinkResolver(
               AND ev.status = 'PUBLISHED'
               AND ev.effective_from <= now()
               AND (ev.effective_to IS NULL OR ev.effective_to > now())
+              AND sl.killed_at IS NULL
+              AND c.killed_at IS NULL
             LIMIT 1
             """.trimIndent(),
             { rs, _ ->

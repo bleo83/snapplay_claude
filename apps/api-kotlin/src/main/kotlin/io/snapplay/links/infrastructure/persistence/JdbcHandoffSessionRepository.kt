@@ -19,8 +19,8 @@ class JdbcHandoffSessionRepository(
             """
             INSERT INTO handoff_sessions
                 (id, smart_link_id, experience_version_id, connection_id,
-                 tracking_token_hash, data_sharing_mode, status, expires_at, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?::data_sharing_mode, ?, ?, ?, ?)
+                 tracking_token_hash, data_sharing_mode, status, is_bot, expires_at, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?::data_sharing_mode, ?, ?, ?, ?, ?)
             """.trimIndent(),
             session.id,
             session.smartLinkId,
@@ -29,6 +29,7 @@ class JdbcHandoffSessionRepository(
             session.trackingTokenHash,
             session.dataSharingMode,
             session.status.name,
+            session.isBot,
             Timestamp.from(session.expiresAt),
             Timestamp.from(session.createdAt),
             Timestamp.from(session.updatedAt),

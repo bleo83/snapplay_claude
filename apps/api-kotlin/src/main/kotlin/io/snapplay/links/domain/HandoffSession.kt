@@ -26,6 +26,7 @@ data class HandoffSession(
     val trackingTokenHash: String,
     val dataSharingMode: String,
     val status: HandoffSessionStatus,
+    val isBot: Boolean = false,
     val expiresAt: Instant,
     val createdAt: Instant,
     val updatedAt: Instant,

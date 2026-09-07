@@ -18,4 +18,5 @@ data class SnapPlayProperties(
     val reconciliationLookbackDays: Long = 7,
     val rappiApiBaseUrl: String = "",
     val rappiApiKey: String = "",
+    val resolverRateLimitPerMinute: Int = 60,
 )
