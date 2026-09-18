@@ -1,0 +1,142 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - staging
+          - prod
+  push:
+    branches: [main]
+    paths:
+      - "apps/api-kotlin/**"
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/snapplay-api
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      image_digest: ${{ steps.build.outputs.digest }}
+    defaults:
+      run:
+        working-directory: apps/api-kotlin
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('apps/api-kotlin/**/*.gradle.kts') }}
+          restore-keys: gradle-
+
+      - name: Build JAR
+        run: chmod +x gradlew && ./gradlew bootJar --no-daemon
+
+      - name: Test
+        run: ./gradlew test --no-daemon
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/api-kotlin
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+  deploy-staging:
+    needs: build-and-push
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: sa-east-1
+
+      - name: Deploy to staging EC2
+        run: |
+          aws ssm send-command \
+            --instance-ids "${{ secrets.STAGING_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters commands='["cd /opt/snapplay && docker-compose pull && docker-compose up -d"]' \
+            --region sa-east-1
+
+      - name: Smoke test
+        run: |
+          sleep 30
+          HEALTH_URL="http://${{ secrets.STAGING_PUBLIC_IP }}/actuator/health"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$HEALTH_URL" || echo "000")
+          if [ "$STATUS" != "200" ]; then
+            echo "Health check failed with status $STATUS"
+            exit 1
+          fi
+          echo "Staging health check passed"
+
+  deploy-prod:
+    needs: build-and-push
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: sa-east-1
+
+      - name: Deploy to prod EC2
+        run: |
+          aws ssm send-command \
+            --instance-ids "${{ secrets.PROD_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters commands='["cd /opt/snapplay && docker-compose pull && docker-compose up -d"]' \
+            --region sa-east-1
+
+      - name: Smoke test
+        run: |
+          sleep 30
+          HEALTH_URL="http://${{ secrets.PROD_PUBLIC_IP }}/actuator/health"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$HEALTH_URL" || echo "000")
+          if [ "$STATUS" != "200" ]; then
+            echo "Health check failed with status $STATUS"
+            exit 1
+          fi
+          echo "Production health check passed"
