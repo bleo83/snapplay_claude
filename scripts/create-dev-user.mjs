@@ -1,7 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
 const url = process.env.SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const serverKey =
+  process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
 const local = Boolean(
   url && /^http:\/\/(127\.0\.0\.1|localhost)(:|\/)/.test(url),
 );
@@ -12,9 +13,9 @@ const password =
   process.env.SNAPPLAY_DEMO_USER_PASSWORD ??
   (local ? "SnapPlayLocal!2026" : undefined);
 
-if (!url || !serviceRoleKey || !email || !password) {
+if (!url || !serverKey || !email || !password) {
   throw new Error(
-    "Set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SNAPPLAY_DEMO_USER_EMAIL and SNAPPLAY_DEMO_USER_PASSWORD in .env.local",
+    "Set SUPABASE_URL, SUPABASE_SECRET_KEY (or legacy SUPABASE_SERVICE_ROLE_KEY), SNAPPLAY_DEMO_USER_EMAIL and SNAPPLAY_DEMO_USER_PASSWORD in .env.local",
   );
 }
 if (password.length < 12)
@@ -22,7 +23,7 @@ if (password.length < 12)
     "SNAPPLAY_DEMO_USER_PASSWORD must contain at least 12 characters",
   );
 
-const supabase = createClient(url, serviceRoleKey, {
+const supabase = createClient(url, serverKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 const { data: listed, error: listError } = await supabase.auth.admin.listUsers({

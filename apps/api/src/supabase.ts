@@ -10,7 +10,7 @@ export function getSupabaseServiceClient(): SupabaseClient {
 
   serviceClient ??= createClient(
     env.SUPABASE_URL as string,
-    env.SUPABASE_SERVICE_ROLE_KEY as string,
+    (env.SUPABASE_SECRET_KEY ?? env.SUPABASE_SERVICE_ROLE_KEY) as string,
     {
       auth: { autoRefreshToken: false, persistSession: false },
       global: { headers: { "x-application-name": "snapplay-api" } },
