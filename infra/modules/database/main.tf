@@ -42,7 +42,7 @@ resource "aws_security_group" "rds" {
 resource "aws_db_instance" "main" {
   identifier     = "${local.name_prefix}-pg"
   engine         = "postgres"
-  engine_version = "16.4"
+  engine_version = "16.15"
   instance_class = "db.t4g.micro"
 
   allocated_storage     = 20
@@ -60,7 +60,7 @@ resource "aws_db_instance" "main" {
   publicly_accessible    = false
   multi_az               = false
 
-  backup_retention_period = 7
+  backup_retention_period = 1
   skip_final_snapshot     = var.environment == "staging"
   final_snapshot_identifier = var.environment == "staging" ? null : "${local.name_prefix}-final"
 
