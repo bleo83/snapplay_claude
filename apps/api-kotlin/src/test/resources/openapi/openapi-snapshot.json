@@ -1,0 +1,3892 @@
+{
+  "components" : {
+    "schemas" : {
+      "AdjustmentRequest" : {
+        "properties" : {
+          "amountMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "reason" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "amountMinor",
+          "reason"
+        ],
+        "type" : "object"
+      },
+      "AttributionFunnelResponse" : {
+        "properties" : {
+          "connectionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "converted" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "gmvMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "ordersDelivered" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "ordersPlaced" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "period" : {
+            "$ref" : "#/components/schemas/PeriodDto"
+          },
+          "redirects" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "scans" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "converted",
+          "ordersDelivered",
+          "ordersPlaced",
+          "period",
+          "redirects",
+          "scans"
+        ],
+        "type" : "object"
+      },
+      "AuditEventDto" : {
+        "properties" : {
+          "action" : {
+            "enum" : [
+              "EXPERIENCE_CREATED",
+              "EXPERIENCE_PUBLISHED",
+              "EXPERIENCE_PAUSED",
+              "EXPERIENCE_RETIRED",
+              "EXPERIENCE_CLONED",
+              "CONNECTION_CREATED",
+              "CONNECTION_UPDATED",
+              "DESTINATION_CHANGED",
+              "CATALOG_SYNCED",
+              "WEBHOOK_SECRET_ROTATED",
+              "ORDER_ADJUSTED",
+              "SETTLEMENT_APPROVED"
+            ],
+            "type" : "string"
+          },
+          "actorId" : {
+            "type" : "string"
+          },
+          "actorType" : {
+            "enum" : [
+              "USER",
+              "SERVICE_ACCOUNT",
+              "SYSTEM"
+            ],
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "occurredAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "organizationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "origin" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "requestId" : {
+            "type" : "string"
+          },
+          "resourceId" : {
+            "type" : "string"
+          },
+          "resourceType" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "action",
+          "actorId",
+          "actorType",
+          "id",
+          "occurredAt",
+          "resourceId",
+          "resourceType"
+        ],
+        "type" : "object"
+      },
+      "AuditEventListResponse" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AuditEventDto"
+            },
+            "type" : "array"
+          },
+          "nextCursor" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "items"
+        ],
+        "type" : "object"
+      },
+      "CatalogProduct" : {
+        "properties" : {
+          "ageRestricted" : {
+            "type" : "boolean"
+          },
+          "brand" : {
+            "type" : "string"
+          },
+          "categories" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "imageUrl" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "providerProductId" : {
+            "type" : "string"
+          },
+          "referencePriceMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "status" : {
+            "enum" : [
+              "ACTIVE",
+              "INACTIVE"
+            ],
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "ageRestricted",
+          "categories",
+          "id",
+          "imageUrl",
+          "name",
+          "providerProductId",
+          "status"
+        ],
+        "type" : "object"
+      },
+      "CatalogSyncResult" : {
+        "properties" : {
+          "categoriesDeactivated" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "categoriesUpserted" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "connectionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "relationsCreated" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "storesDeactivated" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "storesUpserted" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "categoriesDeactivated",
+          "categoriesUpserted",
+          "connectionId",
+          "relationsCreated",
+          "storesDeactivated",
+          "storesUpserted"
+        ],
+        "type" : "object"
+      },
+      "CategoryDto" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "providerCategoryId" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [
+              "ACTIVE",
+              "INACTIVE",
+              "STALE"
+            ],
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "id",
+          "name",
+          "providerCategoryId",
+          "status"
+        ],
+        "type" : "object"
+      },
+      "CategoryListResponse" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CategoryDto"
+            },
+            "type" : "array"
+          },
+          "nextCursor" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "items"
+        ],
+        "type" : "object"
+      },
+      "Channel" : {
+        "properties" : {
+          "channelKey" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [
+              "ACTIVE",
+              "INACTIVE"
+            ],
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "channelKey",
+          "createdAt",
+          "displayName",
+          "id",
+          "status"
+        ],
+        "type" : "object"
+      },
+      "CommerceDestination" : {
+        "properties" : {
+          "providerCategoryId" : {
+            "type" : "string"
+          },
+          "providerStoreId" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "providerCategoryId",
+          "providerStoreId"
+        ],
+        "type" : "object"
+      },
+      "CommerceDestinationRequest" : {
+        "properties" : {
+          "providerCategoryId" : {
+            "type" : "string"
+          },
+          "providerStoreId" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "providerCategoryId",
+          "providerStoreId"
+        ],
+        "type" : "object"
+      },
+      "CommercialContract" : {
+        "properties" : {
+          "activatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "closeDayOfMonth" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "commerceOrganizationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "publisherOrganizationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [
+              "DRAFT",
+              "ACTIVE",
+              "EXPIRED",
+              "TERMINATED"
+            ],
+            "type" : "string"
+          },
+          "territories" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "timezone" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "closeDayOfMonth",
+          "commerceOrganizationId",
+          "createdAt",
+          "id",
+          "name",
+          "publisherOrganizationId",
+          "status",
+          "territories",
+          "timezone"
+        ],
+        "type" : "object"
+      },
+      "CompareRequest" : {
+        "properties" : {
+          "connectionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "lines" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RappiSettlementLine"
+            },
+            "type" : "array"
+          },
+          "periodFrom" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "periodTo" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "connectionId",
+          "lines",
+          "periodFrom",
+          "periodTo"
+        ],
+        "type" : "object"
+      },
+      "ComparisonResult" : {
+        "properties" : {
+          "exceptionsFound" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "linesCompared" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "newExceptions" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "reportId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "exceptionsFound",
+          "linesCompared",
+          "newExceptions",
+          "reportId"
+        ],
+        "type" : "object"
+      },
+      "Connection" : {
+        "properties" : {
+          "capabilities" : {
+            "items" : {
+              "enum" : [
+                "STORE_CATEGORY_DEEPLINK",
+                "CATALOG_SYNC",
+                "ORDER_WEBHOOK_INGRESS",
+                "ORDER_STATUS_MILESTONES",
+                "DAILY_RECONCILIATION"
+              ],
+              "type" : "string"
+            },
+            "type" : "array",
+            "uniqueItems" : true
+          },
+          "commerceOrganizationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "connectorKey" : {
+            "type" : "string"
+          },
+          "contentOrganizationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "dataSharingPolicyId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "environment" : {
+            "enum" : [
+              "SANDBOX",
+              "PRODUCTION"
+            ],
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "killedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [
+              "PENDING",
+              "ACTIVE",
+              "DEGRADED",
+              "SUSPENDED",
+              "CLOSED"
+            ],
+            "type" : "string"
+          },
+          "territories" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "capabilities",
+          "commerceOrganizationId",
+          "connectorKey",
+          "contentOrganizationId",
+          "createdAt",
+          "dataSharingPolicyId",
+          "environment",
+          "id",
+          "name",
+          "status",
+          "territories"
+        ],
+        "type" : "object"
+      },
+      "ContentContext" : {
+        "properties" : {
+          "channelDisplayName" : {
+            "type" : "string"
+          },
+          "channelId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "contextType" : {
+            "enum" : [
+              "CHANNEL",
+              "MOVIE",
+              "SERIES",
+              "EPISODE",
+              "LIVE_EVENT",
+              "COURSE",
+              "LESSON",
+              "EDITORIAL"
+            ],
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "externalRef" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "channelDisplayName",
+          "channelId",
+          "contextType",
+          "createdAt",
+          "externalRef",
+          "id",
+          "title"
+        ],
+        "type" : "object"
+      },
+      "ContractVersion" : {
+        "properties" : {
+          "approvedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "approvedBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "billableEvent" : {
+            "enum" : [
+              "ORDER_PLACED",
+              "ORDER_CONFIRMED",
+              "DELIVERED",
+              "REFUND_WINDOW_ELAPSED",
+              "PROVIDER_SETTLED"
+            ],
+            "type" : "string"
+          },
+          "contractId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "dataSharingPolicyId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "effectiveFrom" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "effectiveTo" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "refundWindowDays" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "rules" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [
+              "DRAFT",
+              "IN_REVIEW",
+              "APPROVED"
+            ],
+            "type" : "string"
+          },
+          "version" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "billableEvent",
+          "contractId",
+          "createdAt",
+          "currency",
+          "dataSharingPolicyId",
+          "effectiveFrom",
+          "id",
+          "refundWindowDays",
+          "rules",
+          "status",
+          "version"
+        ],
+        "type" : "object"
+      },
+      "CreateChannelRequest" : {
+        "properties" : {
+          "channelKey" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "channelKey",
+          "displayName"
+        ],
+        "type" : "object"
+      },
+      "CreateConnectionRequest" : {
+        "properties" : {
+          "capabilities" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "commerceOrganizationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "connectorKey" : {
+            "type" : "string"
+          },
+          "dataSharingPolicyId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "environment" : {
+            "enum" : [
+              "SANDBOX",
+              "PRODUCTION"
+            ],
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "territories" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "capabilities",
+          "commerceOrganizationId",
+          "connectorKey",
+          "dataSharingPolicyId",
+          "environment",
+          "name",
+          "territories"
+        ],
+        "type" : "object"
+      },
+      "CreateContentContextRequest" : {
+        "properties" : {
+          "channelId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "contextType" : {
+            "enum" : [
+              "CHANNEL",
+              "MOVIE",
+              "SERIES",
+              "EPISODE",
+              "LIVE_EVENT",
+              "COURSE",
+              "LESSON",
+              "EDITORIAL"
+            ],
+            "type" : "string"
+          },
+          "externalRef" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "channelId",
+          "contextType",
+          "externalRef",
+          "title"
+        ],
+        "type" : "object"
+      },
+      "CreateContractRequest" : {
+        "properties" : {
+          "closeDayOfMonth" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "commerceOrganizationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "territories" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "timezone" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "closeDayOfMonth",
+          "commerceOrganizationId",
+          "name",
+          "territories",
+          "timezone"
+        ],
+        "type" : "object"
+      },
+      "CreateExperienceRequest" : {
+        "properties" : {
+          "connectionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "contextTitle" : {
+            "type" : "string"
+          },
+          "destination" : {
+            "$ref" : "#/components/schemas/CommerceDestinationRequest"
+          },
+          "endsAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "handoffMode" : {
+            "enum" : [
+              "STORE_DEEPLINK",
+              "DYNAMIC_STOREFRONT",
+              "CART_HANDOFF",
+              "ORDER_API"
+            ],
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "productCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "startsAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "territory" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "connectionId",
+          "contextTitle",
+          "destination",
+          "handoffMode",
+          "name",
+          "productCount",
+          "startsAt",
+          "territory"
+        ],
+        "type" : "object"
+      },
+      "CreateOrganizationRequest" : {
+        "properties" : {
+          "country" : {
+            "type" : "string"
+          },
+          "defaultCurrency" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "legalName" : {
+            "type" : "string"
+          },
+          "organizationType" : {
+            "enum" : [
+              "CONTENT_PROVIDER",
+              "COMMERCE_PROVIDER",
+              "ORCHESTRATOR",
+              "BRAND",
+              "MERCHANT"
+            ],
+            "type" : "string"
+          },
+          "timezone" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "country",
+          "defaultCurrency",
+          "displayName",
+          "legalName",
+          "organizationType",
+          "timezone"
+        ],
+        "type" : "object"
+      },
+      "CreateSmartLinkRequest" : {
+        "properties" : {
+          "experienceId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "placementKey" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "experienceId",
+          "placementKey"
+        ],
+        "type" : "object"
+      },
+      "CreateVersionRequest" : {
+        "properties" : {
+          "billableEvent" : {
+            "type" : "string"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "dataSharingPolicyId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "effectiveFrom" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "effectiveTo" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "refundWindowDays" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "rules" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "billableEvent",
+          "currency",
+          "dataSharingPolicyId",
+          "effectiveFrom",
+          "refundWindowDays",
+          "rules"
+        ],
+        "type" : "object"
+      },
+      "DashboardResponse" : {
+        "properties" : {
+          "currency" : {
+            "type" : "string"
+          },
+          "experiences" : {
+            "items" : {
+              "type" : "object"
+            },
+            "type" : "array"
+          },
+          "freshness" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "funnelSteps" : {
+            "items" : {
+              "$ref" : "#/components/schemas/FunnelStep"
+            },
+            "type" : "array"
+          },
+          "metrics" : {
+            "$ref" : "#/components/schemas/MetricsDto"
+          },
+          "rangeLabel" : {
+            "type" : "string"
+          },
+          "recentOrders" : {
+            "items" : {
+              "type" : "object"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "currency",
+          "experiences",
+          "freshness",
+          "funnelSteps",
+          "metrics",
+          "rangeLabel",
+          "recentOrders"
+        ],
+        "type" : "object"
+      },
+      "Experience" : {
+        "properties" : {
+          "channel" : {
+            "type" : "string"
+          },
+          "connectionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "contextTitle" : {
+            "type" : "string"
+          },
+          "destination" : {
+            "$ref" : "#/components/schemas/CommerceDestination"
+          },
+          "endsAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "handoffMode" : {
+            "enum" : [
+              "STORE_DEEPLINK",
+              "DYNAMIC_STOREFRONT",
+              "CART_HANDOFF",
+              "ORDER_API"
+            ],
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "productCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "startsAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [
+              "DRAFT",
+              "IN_REVIEW",
+              "PUBLISHED",
+              "PAUSED",
+              "RETIRED"
+            ],
+            "type" : "string"
+          },
+          "territory" : {
+            "type" : "string"
+          },
+          "version" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "channel",
+          "connectionId",
+          "contextTitle",
+          "destination",
+          "handoffMode",
+          "id",
+          "name",
+          "productCount",
+          "startsAt",
+          "status",
+          "territory",
+          "version"
+        ],
+        "type" : "object"
+      },
+      "ExperienceListResponse" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Experience"
+            },
+            "type" : "array"
+          },
+          "nextCursor" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "items"
+        ],
+        "type" : "object"
+      },
+      "FunnelStep" : {
+        "properties" : {
+          "count" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "pct" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "required" : [
+          "count",
+          "label",
+          "pct"
+        ],
+        "type" : "object"
+      },
+      "GenerateStatementRequest" : {
+        "properties" : {
+          "contractId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "counterpartyId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "partyId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "periodFrom" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "periodTo" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "contractId",
+          "counterpartyId",
+          "currency",
+          "partyId",
+          "periodFrom",
+          "periodTo"
+        ],
+        "type" : "object"
+      },
+      "LedgerEntry" : {
+        "properties" : {
+          "actorId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "amountMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "baseAmountMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "causativeEvent" : {
+            "type" : "string"
+          },
+          "contractVersionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "counterpartyId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "entryType" : {
+            "enum" : [
+              "EARN",
+              "REVERSAL",
+              "ADJUSTMENT"
+            ],
+            "type" : "string"
+          },
+          "handoffSessionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "originalEntryId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "partyId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "providerOrderId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "ruleKey" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [
+              "PENDING",
+              "EARNED",
+              "REVERSED",
+              "SETTLED"
+            ],
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "amountMinor",
+          "baseAmountMinor",
+          "causativeEvent",
+          "contractVersionId",
+          "counterpartyId",
+          "createdAt",
+          "currency",
+          "entryType",
+          "id",
+          "partyId",
+          "providerOrderId",
+          "ruleKey",
+          "status"
+        ],
+        "type" : "object"
+      },
+      "MetricsDto" : {
+        "properties" : {
+          "conversionRate" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "deliveredOrders" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "gmvMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "handoffs" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "revenueShareMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "scans" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "conversionRate",
+          "deliveredOrders",
+          "gmvMinor",
+          "handoffs",
+          "revenueShareMinor",
+          "scans"
+        ],
+        "type" : "object"
+      },
+      "OrganizationProfile" : {
+        "properties" : {
+          "country" : {
+            "type" : "string"
+          },
+          "defaultCurrency" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "legalName" : {
+            "type" : "string"
+          },
+          "organizationType" : {
+            "enum" : [
+              "CONTENT_PROVIDER",
+              "COMMERCE_PROVIDER",
+              "ORCHESTRATOR",
+              "BRAND",
+              "MERCHANT"
+            ],
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [
+              "PENDING",
+              "ACTIVE",
+              "SUSPENDED",
+              "CLOSED"
+            ],
+            "type" : "string"
+          },
+          "timezone" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "country",
+          "defaultCurrency",
+          "displayName",
+          "id",
+          "legalName",
+          "organizationType",
+          "status",
+          "timezone"
+        ],
+        "type" : "object"
+      },
+      "PageResultChannel" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Channel"
+            },
+            "type" : "array"
+          },
+          "nextCursor" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "items"
+        ],
+        "type" : "object"
+      },
+      "PageResultConnection" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Connection"
+            },
+            "type" : "array"
+          },
+          "nextCursor" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "items"
+        ],
+        "type" : "object"
+      },
+      "PageResultContentContext" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ContentContext"
+            },
+            "type" : "array"
+          },
+          "nextCursor" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "items"
+        ],
+        "type" : "object"
+      },
+      "PartyBalance" : {
+        "properties" : {
+          "currency" : {
+            "type" : "string"
+          },
+          "earnedMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "partyId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "pendingMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "settledMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "currency",
+          "earnedMinor",
+          "partyId",
+          "pendingMinor",
+          "settledMinor",
+          "totalMinor"
+        ],
+        "type" : "object"
+      },
+      "PeriodDto" : {
+        "properties" : {
+          "from" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "to" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "from",
+          "to"
+        ],
+        "type" : "object"
+      },
+      "PollingTokenResponse" : {
+        "properties" : {
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "token" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "expiresAt",
+          "token"
+        ],
+        "type" : "object"
+      },
+      "ProductListResponse" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CatalogProduct"
+            },
+            "type" : "array"
+          },
+          "nextCursor" : {
+            "type" : "string"
+          },
+          "source" : {
+            "type" : "string"
+          },
+          "total" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "items",
+          "source",
+          "total"
+        ],
+        "type" : "object"
+      },
+      "RappiSettlementLine" : {
+        "properties" : {
+          "currency" : {
+            "type" : "string"
+          },
+          "deliveredAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "feeMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "orderTotalMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "placedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "providerOrderRef" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "currency",
+          "feeMinor",
+          "orderTotalMinor",
+          "placedAt",
+          "providerOrderRef",
+          "status"
+        ],
+        "type" : "object"
+      },
+      "ResolveRequest" : {
+        "properties" : {
+          "adjustmentId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "note" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [
+              "OPEN",
+              "UNDER_REVIEW",
+              "RESOLVED",
+              "WAIVED"
+            ],
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "note",
+          "status"
+        ],
+        "type" : "object"
+      },
+      "RetentionPolicyDto" : {
+        "properties" : {
+          "anonymizable" : {
+            "type" : "boolean"
+          },
+          "dataClass" : {
+            "type" : "string"
+          },
+          "owner" : {
+            "type" : "string"
+          },
+          "purpose" : {
+            "type" : "string"
+          },
+          "retentionDays" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "table" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "anonymizable",
+          "dataClass",
+          "owner",
+          "purpose",
+          "retentionDays",
+          "table"
+        ],
+        "type" : "object"
+      },
+      "SessionMilestoneResponse" : {
+        "properties" : {
+          "asOf" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "handoffSessionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "milestone" : {
+            "enum" : [
+              "CONFIRMED",
+              "PICKED_UP",
+              "NEAR_DESTINATION",
+              "ARRIVED_AT_DESTINATION",
+              "DELIVERED"
+            ],
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "asOf",
+          "handoffSessionId"
+        ],
+        "type" : "object"
+      },
+      "SettlementException" : {
+        "properties" : {
+          "connectionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "detectedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "exceptionType" : {
+            "enum" : [
+              "MISSING_IN_SNAPPLAY",
+              "MISSING_IN_PROVIDER",
+              "STATUS_MISMATCH",
+              "AMOUNT_MISMATCH",
+              "CURRENCY_MISMATCH",
+              "FEE_MISMATCH",
+              "LATE_REFUND",
+              "DUPLICATE_ATTRIBUTION"
+            ],
+            "type" : "string"
+          },
+          "expectedValue" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "providerOrderRef" : {
+            "type" : "string"
+          },
+          "reportId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "reportedValue" : {
+            "type" : "string"
+          },
+          "resolutionAdjustmentId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "resolutionNote" : {
+            "type" : "string"
+          },
+          "resolvedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "resolvedBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [
+              "OPEN",
+              "UNDER_REVIEW",
+              "RESOLVED",
+              "WAIVED"
+            ],
+            "type" : "string"
+          },
+          "toleranceAppliedMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "connectionId",
+          "detectedAt",
+          "exceptionType",
+          "id",
+          "providerOrderRef",
+          "reportId",
+          "status"
+        ],
+        "type" : "object"
+      },
+      "SmartLink" : {
+        "properties" : {
+          "conversions" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "experienceName" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "placementKey" : {
+            "type" : "string"
+          },
+          "scans" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "shortCode" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [
+              "ACTIVE",
+              "PAUSED",
+              "EXPIRED",
+              "RETIRED"
+            ],
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "conversions",
+          "experienceName",
+          "id",
+          "placementKey",
+          "scans",
+          "shortCode",
+          "status",
+          "url"
+        ],
+        "type" : "object"
+      },
+      "SmartLinkListResponse" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SmartLink"
+            },
+            "type" : "array"
+          },
+          "nextCursor" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "items"
+        ],
+        "type" : "object"
+      },
+      "Statement" : {
+        "properties" : {
+          "approvedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "approvedBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "calculatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "calculatedBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "checksum" : {
+            "type" : "string"
+          },
+          "contractId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "counterpartyId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "issuedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "lineCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "paidAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "partyId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "paymentRef" : {
+            "type" : "string"
+          },
+          "periodFrom" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "periodTo" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [
+              "OPEN",
+              "CALCULATED",
+              "REVIEW",
+              "APPROVED",
+              "ISSUED",
+              "PAID",
+              "CLOSED"
+            ],
+            "type" : "string"
+          },
+          "totalMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "contractId",
+          "counterpartyId",
+          "createdAt",
+          "currency",
+          "id",
+          "lineCount",
+          "partyId",
+          "periodFrom",
+          "periodTo",
+          "status",
+          "totalMinor"
+        ],
+        "type" : "object"
+      },
+      "StatementLine" : {
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "entryCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "ruleKey" : {
+            "type" : "string"
+          },
+          "statementId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "totalMinor" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "description",
+          "entryCount",
+          "id",
+          "ruleKey",
+          "statementId",
+          "totalMinor"
+        ],
+        "type" : "object"
+      },
+      "StoreDto" : {
+        "properties" : {
+          "country" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "providerStoreId" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [
+              "ACTIVE",
+              "INACTIVE",
+              "STALE"
+            ],
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "country",
+          "id",
+          "name",
+          "providerStoreId",
+          "status"
+        ],
+        "type" : "object"
+      },
+      "StoreListResponse" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/StoreDto"
+            },
+            "type" : "array"
+          },
+          "nextCursor" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "items"
+        ],
+        "type" : "object"
+      },
+      "UpdateConnectionRequest" : {
+        "properties" : {
+          "capabilities" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "status" : {
+            "enum" : [
+              "PENDING",
+              "ACTIVE",
+              "DEGRADED",
+              "SUSPENDED",
+              "CLOSED"
+            ],
+            "type" : "string"
+          },
+          "territories" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "UpdateOrganizationRequest" : {
+        "properties" : {
+          "country" : {
+            "type" : "string"
+          },
+          "defaultCurrency" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "legalName" : {
+            "type" : "string"
+          },
+          "timezone" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "country",
+          "defaultCurrency",
+          "displayName",
+          "legalName",
+          "timezone"
+        ],
+        "type" : "object"
+      },
+      "ValidationIssue" : {
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "field" : {
+            "type" : "string"
+          },
+          "message" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "code",
+          "field",
+          "message"
+        ],
+        "type" : "object"
+      },
+      "ValidationResult" : {
+        "properties" : {
+          "errors" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ValidationIssue"
+            },
+            "type" : "array"
+          },
+          "valid" : {
+            "type" : "boolean"
+          },
+          "warnings" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ValidationIssue"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "errors",
+          "valid",
+          "warnings"
+        ],
+        "type" : "object"
+      }
+    }
+  },
+  "info" : {
+    "description" : "Commerce-to-content integration platform API",
+    "title" : "Snap Play API",
+    "version" : "v1"
+  },
+  "openapi" : "3.0.1",
+  "paths" : {
+    "/health" : {
+      "get" : {
+        "operationId" : "health",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "additionalProperties" : {
+                    "type" : "string"
+                  },
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "health-controller"
+        ]
+      }
+    },
+    "/r/{shortCode}" : {
+      "get" : {
+        "operationId" : "resolve_1",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "shortCode",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "header",
+            "name" : "User-Agent",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "qr-resolver-controller"
+        ]
+      }
+    },
+    "/v1/admin/retention/policies" : {
+      "get" : {
+        "operationId" : "policies",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/RetentionPolicyDto"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "retention-controller"
+        ]
+      }
+    },
+    "/v1/analytics/attribution/funnel" : {
+      "get" : {
+        "operationId" : "getFunnel",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "connectionId",
+            "required" : false,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "from",
+            "required" : false,
+            "schema" : {
+              "format" : "date-time",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "to",
+            "required" : false,
+            "schema" : {
+              "format" : "date-time",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AttributionFunnelResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "attribution-funnel-controller"
+        ]
+      }
+    },
+    "/v1/audit/events" : {
+      "get" : {
+        "operationId" : "search",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "action",
+            "required" : false,
+            "schema" : {
+              "enum" : [
+                "EXPERIENCE_CREATED",
+                "EXPERIENCE_PUBLISHED",
+                "EXPERIENCE_PAUSED",
+                "EXPERIENCE_RETIRED",
+                "EXPERIENCE_CLONED",
+                "CONNECTION_CREATED",
+                "CONNECTION_UPDATED",
+                "DESTINATION_CHANGED",
+                "CATALOG_SYNCED",
+                "WEBHOOK_SECRET_ROTATED",
+                "ORDER_ADJUSTED",
+                "SETTLEMENT_APPROVED"
+              ],
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "resourceType",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "resourceId",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "actorId",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "organizationId",
+            "required" : false,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "limit",
+            "required" : false,
+            "schema" : {
+              "default" : 50,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "cursor",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuditEventListResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "audit-controller"
+        ]
+      }
+    },
+    "/v1/catalog/products" : {
+      "get" : {
+        "operationId" : "products",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "q",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "category",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "status",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "limit",
+            "required" : false,
+            "schema" : {
+              "default" : 50,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "cursor",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProductListResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "catalog-controller"
+        ]
+      }
+    },
+    "/v1/catalog/stores" : {
+      "get" : {
+        "operationId" : "listStores",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "connectionId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "status",
+            "required" : false,
+            "schema" : {
+              "enum" : [
+                "ACTIVE",
+                "INACTIVE",
+                "STALE"
+              ],
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "limit",
+            "required" : false,
+            "schema" : {
+              "default" : 50,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "cursor",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StoreListResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "store-category-controller"
+        ]
+      }
+    },
+    "/v1/catalog/stores/{storeId}/categories" : {
+      "get" : {
+        "operationId" : "listCategories",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "storeId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "status",
+            "required" : false,
+            "schema" : {
+              "enum" : [
+                "ACTIVE",
+                "INACTIVE",
+                "STALE"
+              ],
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "limit",
+            "required" : false,
+            "schema" : {
+              "default" : 50,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "cursor",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CategoryListResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "store-category-controller"
+        ]
+      }
+    },
+    "/v1/catalog/sync" : {
+      "post" : {
+        "operationId" : "sync",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "connectionId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CatalogSyncResult"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "store-category-controller"
+        ]
+      }
+    },
+    "/v1/channels" : {
+      "get" : {
+        "operationId" : "list_6",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "limit",
+            "required" : false,
+            "schema" : {
+              "default" : 50,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "cursor",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResultChannel"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "channel-controller"
+        ]
+      },
+      "post" : {
+        "operationId" : "create_6",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateChannelRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Channel"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "channel-controller"
+        ]
+      }
+    },
+    "/v1/connections" : {
+      "get" : {
+        "operationId" : "list_5",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "limit",
+            "required" : false,
+            "schema" : {
+              "default" : 20,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "cursor",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResultConnection"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "connection-controller"
+        ]
+      },
+      "post" : {
+        "operationId" : "create_5",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateConnectionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Connection"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "connection-controller"
+        ]
+      }
+    },
+    "/v1/connections/{id}" : {
+      "get" : {
+        "operationId" : "get_1",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Connection"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "connection-controller"
+        ]
+      },
+      "patch" : {
+        "operationId" : "update_1",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateConnectionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Connection"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "connection-controller"
+        ]
+      }
+    },
+    "/v1/content-contexts" : {
+      "get" : {
+        "operationId" : "list_4",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "channelId",
+            "required" : false,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "limit",
+            "required" : false,
+            "schema" : {
+              "default" : 50,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "cursor",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResultContentContext"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "content-context-controller"
+        ]
+      },
+      "post" : {
+        "operationId" : "create_4",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateContentContextRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ContentContext"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "content-context-controller"
+        ]
+      }
+    },
+    "/v1/contracts" : {
+      "get" : {
+        "operationId" : "list_3",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/CommercialContract"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "contract-controller"
+        ]
+      },
+      "post" : {
+        "operationId" : "create_3",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateContractRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CommercialContract"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "contract-controller"
+        ]
+      }
+    },
+    "/v1/contracts/versions/{versionId}/approve" : {
+      "patch" : {
+        "operationId" : "approveVersion",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "versionId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ContractVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "contract-controller"
+        ]
+      }
+    },
+    "/v1/contracts/{contractId}/versions" : {
+      "post" : {
+        "operationId" : "createVersion",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "contractId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateVersionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ContractVersion"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "contract-controller"
+        ]
+      }
+    },
+    "/v1/contracts/{contractId}/versions/effective" : {
+      "get" : {
+        "operationId" : "getEffective",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "contractId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "at",
+            "required" : false,
+            "schema" : {
+              "format" : "date-time",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ContractVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "contract-controller"
+        ]
+      }
+    },
+    "/v1/contracts/{id}/activate" : {
+      "patch" : {
+        "operationId" : "activate",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CommercialContract"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "contract-controller"
+        ]
+      }
+    },
+    "/v1/dashboard" : {
+      "get" : {
+        "operationId" : "getDashboard",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "connectionId",
+            "required" : false,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "from",
+            "required" : false,
+            "schema" : {
+              "format" : "date-time",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "to",
+            "required" : false,
+            "schema" : {
+              "format" : "date-time",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DashboardResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "dashboard-controller"
+        ]
+      }
+    },
+    "/v1/experiences" : {
+      "get" : {
+        "operationId" : "list_2",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "limit",
+            "required" : false,
+            "schema" : {
+              "default" : 50,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "cursor",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExperienceListResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "experience-controller"
+        ]
+      },
+      "post" : {
+        "operationId" : "create_2",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateExperienceRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Experience"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "experience-controller"
+        ]
+      }
+    },
+    "/v1/experiences/{id}/clone" : {
+      "post" : {
+        "operationId" : "clone",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Experience"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "experience-controller"
+        ]
+      }
+    },
+    "/v1/experiences/{id}/pause" : {
+      "patch" : {
+        "operationId" : "pause",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Experience"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "experience-controller"
+        ]
+      }
+    },
+    "/v1/experiences/{id}/publish" : {
+      "patch" : {
+        "operationId" : "publish",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Experience"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "experience-controller"
+        ]
+      }
+    },
+    "/v1/experiences/{id}/retire" : {
+      "patch" : {
+        "operationId" : "retire",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Experience"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "experience-controller"
+        ]
+      }
+    },
+    "/v1/experiences/{id}/validate" : {
+      "post" : {
+        "operationId" : "validate",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationResult"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "experience-controller"
+        ]
+      }
+    },
+    "/v1/ledger/balance" : {
+      "get" : {
+        "operationId" : "balance",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "partyId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "currency",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "from",
+            "required" : false,
+            "schema" : {
+              "format" : "date-time",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "to",
+            "required" : false,
+            "schema" : {
+              "format" : "date-time",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PartyBalance"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "ledger-controller"
+        ]
+      }
+    },
+    "/v1/ledger/entries/{entryId}/adjust" : {
+      "post" : {
+        "operationId" : "adjust",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "entryId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdjustmentRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LedgerEntry"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "ledger-controller"
+        ]
+      }
+    },
+    "/v1/ledger/orders/{orderId}/entries" : {
+      "get" : {
+        "operationId" : "entriesByOrder",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "orderId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/LedgerEntry"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "ledger-controller"
+        ]
+      }
+    },
+    "/v1/organization" : {
+      "get" : {
+        "operationId" : "get",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizationProfile"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "organization-controller"
+        ]
+      },
+      "patch" : {
+        "operationId" : "update",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateOrganizationRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizationProfile"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "organization-controller"
+        ]
+      }
+    },
+    "/v1/organizations" : {
+      "post" : {
+        "operationId" : "create_1",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateOrganizationRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizationProfile"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "organization-controller"
+        ]
+      }
+    },
+    "/v1/partner/events" : {
+      "post" : {
+        "operationId" : "ingestEvent",
+        "parameters" : [
+          {
+            "in" : "header",
+            "name" : "X-Rappi-Signature",
+            "required" : false,
+            "schema" : {
+              "default" : "",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "format" : "byte",
+                "type" : "string"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "partner-event-controller"
+        ]
+      }
+    },
+    "/v1/sessions/milestone" : {
+      "get" : {
+        "operationId" : "getMilestone",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "token",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SessionMilestoneResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "polling-controller"
+        ]
+      }
+    },
+    "/v1/sessions/{sessionId}/polling-token" : {
+      "post" : {
+        "operationId" : "issueToken",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "sessionId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PollingTokenResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "polling-controller"
+        ]
+      }
+    },
+    "/v1/settlement/compare" : {
+      "post" : {
+        "operationId" : "compare",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CompareRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ComparisonResult"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "settlement-controller"
+        ]
+      }
+    },
+    "/v1/settlement/exceptions" : {
+      "get" : {
+        "operationId" : "exceptions",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "connectionId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "status",
+            "required" : false,
+            "schema" : {
+              "enum" : [
+                "OPEN",
+                "UNDER_REVIEW",
+                "RESOLVED",
+                "WAIVED"
+              ],
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SettlementException"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "settlement-controller"
+        ]
+      }
+    },
+    "/v1/settlement/exceptions/{id}/resolve" : {
+      "patch" : {
+        "operationId" : "resolve",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ResolveRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SettlementException"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "settlement-controller"
+        ]
+      }
+    },
+    "/v1/smart-links" : {
+      "get" : {
+        "operationId" : "list_1",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "limit",
+            "required" : false,
+            "schema" : {
+              "default" : 50,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "cursor",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SmartLinkListResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "smart-link-controller"
+        ]
+      },
+      "post" : {
+        "operationId" : "create",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateSmartLinkRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SmartLink"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "smart-link-controller"
+        ]
+      }
+    },
+    "/v1/smart-links/{shortCode}/qr" : {
+      "get" : {
+        "operationId" : "qr",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "shortCode",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "image/png" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "smart-link-controller"
+        ]
+      }
+    },
+    "/v1/statements" : {
+      "get" : {
+        "operationId" : "list",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "partyId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/Statement"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "statement-controller"
+        ]
+      },
+      "post" : {
+        "operationId" : "generate",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GenerateStatementRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Statement"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "statement-controller"
+        ]
+      }
+    },
+    "/v1/statements/{id}/approve" : {
+      "patch" : {
+        "operationId" : "approve",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Statement"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "statement-controller"
+        ]
+      }
+    },
+    "/v1/statements/{id}/lines" : {
+      "get" : {
+        "operationId" : "lines",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/StatementLine"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "statement-controller"
+        ]
+      }
+    }
+  },
+  "servers" : [
+    {
+      "description" : "Generated server url",
+      "url" : "http://localhost"
+    }
+  ]
+}

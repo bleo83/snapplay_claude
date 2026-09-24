@@ -60,4 +60,10 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    // Deliberate, opt-in regeneration of the committed OpenAPI snapshot (see OpenApiSnapshotTest):
+    // ./gradlew test --tests '*OpenApiSnapshotTest' -Dopenapi.snapshot.update=true
+    systemProperty(
+        "openapi.snapshot.update",
+        providers.systemProperty("openapi.snapshot.update").getOrElse("false"),
+    )
 }
